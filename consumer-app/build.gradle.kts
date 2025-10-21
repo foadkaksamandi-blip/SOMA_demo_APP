@@ -1,65 +1,50 @@
 plugins {
     id("com.android.application")
-    kotlin("android") version "1.9.24"
+    kotlin("android")
 }
 
 android {
     namespace = "com.soma.consumer"
-    compileSdk = property("compile.sdk").toString().toInt()
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "com.soma.consumer"
-        minSdk = property("min.sdk").toString().toInt()
-        targetSdk = property("target.sdk").toString().toInt()
+        minSdk = 26
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0.0"
     }
 
-    buildTypes {
-        release {
-            isMinifyEnabled = false
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-        }
-        debug {
-            isMinifyEnabled = false
-        }
+    buildFeatures {
+        viewBinding = true   // فعال برای ActivityMainBinding
+        dataBinding = false
+        compose = false
     }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+
     kotlinOptions {
         jvmTarget = "17"
     }
 
-    buildFeatures {
-        compose = true
-    }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.14"
-    }
-
     packaging {
-        resources.excludes += setOf("META-INF/**")
+        resources.excludes += setOf("META-INF/*")
     }
 }
 
 dependencies {
-    val composeBom = platform("androidx.compose:compose-bom:" + providers.gradleProperty("compose.bom").get())
-    implementation(composeBom)
-    androidTestImplementation(composeBom)
+    implementation(platform("androidx.compose:compose-bom:2024.06.00"))
 
+    // AndroidX & UI
     implementation("androidx.core:core-ktx:1.13.1")
-    implementation("androidx.activity:activity-compose:1.9.2")
-    implementation("androidx.compose.ui:ui")
-    implementation("androidx.compose.material3:material3:1.2.1")
-    implementation("androidx.compose.ui:ui-tooling-preview")
-    debugImplementation("androidx.compose.ui:ui-tooling")
-
-    // Material Components برای استفاده احتمالی
+    implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("com.google.android.material:material:1.12.0")
+    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
 
-    // Coroutines
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+    // ZXing for QR scanning
+    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
+    implementation("com.google.zxing:core:3.5.1")
 }
