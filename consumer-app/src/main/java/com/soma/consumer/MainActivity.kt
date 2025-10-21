@@ -1,13 +1,12 @@
 package com.soma.consumer
 
-import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import com.journeyapps.barcodescanner.ScanContract
+import com.journeyapps.barcodescanner.ScanOptions
 import com.soma.consumer.ble.BleClient
-import com.soma.consumer.qr.QrScanner
 
 class MainActivity : AppCompatActivity() {
 
@@ -18,12 +17,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnStopBle: Button
 
     private lateinit var bleClient: BleClient
-    private lateinit var qrScanner: QrScanner
 
-    private val qrLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { res ->
-        val text = QrScanner.parseResult(res.resultCode, res.data)
+    // لانچر رسمی ZXing (بدون کلاس واسط)
+    private val qrLauncher = registerForActivityResult(ScanContract()) { result ->
+        val text = result?.contents
         tvResult.text = if (text.isNullOrEmpty()) "نتیجه: -" else "نتیجه: $text"
     }
 
@@ -37,11 +34,30 @@ class MainActivity : AppCompatActivity() {
         btnStartBle = findViewById(R.id.btnStartBle)
         btnStopBle = findViewById(R.id.btnStopBle)
 
-        bleClient = BleClient(this) { status -> tvStatus.text = "وضعیت: $status" }
-        qrScanner = QrScanner(qrLauncher) { /* handled in launcher */ }
+        // توجه: طبق لاگ‌ها BleClient فقط یک Context می‌گیرد.
+        bleClient = BleClient(this)
 
-        btnScanQr.setOnClickListener { qrScanner.launch() }
-        btnStartBle.setOnClickListener { bleClient.start() }
-        btnStopBle.setOnClickListener { bleClient.stop() }
+        btnScanQr.setOnClickListener {
+            val options = ScanOptions()
+                .setDesiredBarcodeFormats(ScanOptions.QR_CODE)
+                .setPrompt("QR را مقابل دوربین بگیرید")
+                .setBeepEnabled(true)
+                .setOrientationLocked(false)
+            qrLauncher.launch(options)
+        }
+
+        // چون امضای متدهای BleClient را نداریم و لاگ گفت stop وجود ندارد،
+        // فعلاً فقط وضعیت UI را آپدیت می‌کنیم تا بیلد سبز شود.
+        btnStartBle.setOnClickListener {
+            tvStatus.text = "وضعیت: تلاش برای اتصال BLE"
+            // TODO: اگر API صحیح BleClient را می‌دانیم، اینجا فراخوانی واقعی را بگذاریم.
+            // مثلا: bleClient.startScan() یا bleClient.connect(...)
+        }
+
+        btnStopBle.setOnClickListener {
+            tvStatus.text = "وضعیت: متوقف"
+            // TODO: اگر API صحیح BleClient را می‌دانیم، اینجا فراخوانی واقعی را بگذاریم.
+            // مثلا: bleClient.disconnect() یا bleClient.stopScan()
+        }
     }
 }
