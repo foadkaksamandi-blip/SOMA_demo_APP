@@ -1,6 +1,6 @@
 plugins {
-    id("com.android.application") version "8.5.2"
-    kotlin("android") version "1.9.24"
+    id("com.android.application")
+    kotlin("android")
 }
 
 android {
@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId = "com.soma.merchant"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
@@ -28,6 +28,7 @@ android {
         }
     }
 
+    // ما از XML لایه‌ها استفاده می‌کنیم
     buildFeatures {
         viewBinding = true
     }
@@ -41,16 +42,19 @@ android {
     }
 
     packaging {
-        resources {
-            excludes += setOf("META-INF/**")
-        }
+        resources.excludes += setOf("META-INF/*")
     }
 }
 
 dependencies {
+    // اندروید پایه
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.appcompat:appcompat:1.7.0")
-    implementation("com.google.android.material:material:1.12.0")
-    implementation("androidx.activity:activity-ktx:1.9.2")
-    // برای بلوتوث کلاسیک نیاز به کتابخانه جدا نیست؛ از API اندروید استفاده می‌کنیم
+    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
+
+    // Material 3 (برای استایل‌های Filled/Outlined و اتربیوت‌های materialButton*)
+    implementation("com.google.android.material:material:1.13.0-alpha05")
+
+    // (اختیاری) لاگ و کمک‌ها
+    debugImplementation("androidx.compose.ui:ui-tooling:1.7.5") // فقط برای Preview/Tooling بی‌اثر روی XML
 }
