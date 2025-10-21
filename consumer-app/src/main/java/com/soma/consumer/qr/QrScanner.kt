@@ -1,3 +1,4 @@
+// اختیاری: اگر می‌خواهی همچنان کلاس QrScanner داشته باشی، نسخه‌ی امن با context:
 package com.soma.consumer.qr
 
 import android.app.Activity
@@ -6,12 +7,9 @@ import androidx.activity.result.ActivityResultLauncher
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
 
-/**
- * QrScanner – یک wrapper ساده روی ZXing که از Activity Result API استفاده می‌کند
- */
 class QrScanner(
-    private val launcher: ActivityResultLauncher<Intent>,
-    private val onResult: (String?) -> Unit
+    private val activity: Activity,
+    private val launcher: ActivityResultLauncher<Intent>
 ) {
     fun launch() {
         val options = ScanOptions()
@@ -19,13 +17,7 @@ class QrScanner(
             .setPrompt("QR را مقابل دوربین بگیرید")
             .setBeepEnabled(true)
             .setOrientationLocked(false)
-        launcher.launch(ScanContract().createIntent(null, options))
-    }
-
-    companion object {
-        fun parseResult(resultCode: Int, data: Intent?): String? {
-            val result = ScanContract().parseResult(resultCode, data)
-            return result?.contents
-        }
+        val intent = ScanContract().createIntent(activity, options) // دیگر null نیست
+        launcher.launch(intent)
     }
 }
