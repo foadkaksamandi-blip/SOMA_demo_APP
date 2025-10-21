@@ -1,0 +1,32 @@
+<resources>
+    <string name="app_name">SOMA Consumer</string>
+
+    <!-- هدر -->
+    <string name="header_title">آپ آفلاین سوما 👤</string>
+    <string name="header_sub">اپ خریدار</string>
+
+    <!-- برچسب‌ها -->
+    <string name="label_balance_main">موجودی کیف اصلی</string>
+    <string name="label_balance_subsidy">موجودی یارانه</string>
+    <string name="label_balance_emergency">موجودی اضطراری</string>
+    <string name="label_balance_cbdc">موجودی رمز ارز ملی</string>
+    <string name="label_amount">مبلغ (تومان)</string>
+
+    <!-- دکمه‌ها -->
+    <string name="btn_pay_ble">پرداخت با بلوتوث</string>
+    <string name="btn_pay_qr">پرداخت با QR کد</string>
+    <string name="btn_pay_subsidy">پرداخت از یارانه</string>
+    <string name="btn_pay_emergency">پرداخت اضطراری</string>
+    <string name="btn_pay_cbdc">پرداخت با رمز ارز ملی</string>
+    <string name="btn_history">تاریخچه تراکنش‌ها</string>
+    <string name="btn_topup">شارژ آزمایشی +۱۰۰,۰۰۰</string>
+
+    <!-- پیام‌های وضعیت -->
+    <string name="status_connecting">در حال اتصال…</string>
+    <string name="status_success">پرداخت انجام شد ✅</string>
+    <string name="status_fail">تراکنش ناموفق ❌</string>
+    <string name="status_invalid_amount">مبلغ معتبر نیست</string>
+    <string name="status_insufficient">موجودی کافی نیست</string>
+    <string name="status_ble_unavailable">بلوتوث در دسترس نیست</string>
+    <string name="status_qr_invalid">QR نامعتبر است</string>
+</resources>
