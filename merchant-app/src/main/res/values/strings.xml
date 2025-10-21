@@ -1,28 +1,3 @@
 <resources>
-    <string name="app_name">SOMA Merchant</string>
-
-    <!-- هدر -->
-    <string name="header_title">آپ آفلاین سوما 🏪</string>
-    <string name="header_sub">اپ فروشنده</string>
-
-    <!-- برچسب‌ها -->
-    <string name="label_balance_main">موجودی کیف اصلی</string>
-    <string name="label_balance_subsidy">موجودی یارانه</string>
-    <string name="label_balance_emergency">موجودی اضطراری</string>
-    <string name="label_balance_cbdc">موجودی رمز ارز ملی</string>
-    <string name="label_amount">مبلغ خرید (تومان)</string>
-
-    <!-- دکمه‌ها -->
-    <string name="btn_ble_receive">دریافت با بلوتوث</string>
-    <string name="btn_generate_qr">تولید QR کد</string>
-    <string name="btn_recv_subsidy">دریافت یارانه</string>
-    <string name="btn_recv_emergency">دریافت اضطراری</string>
-    <string name="btn_recv_cbdc">دریافت رمز ارز ملی</string>
-    <string name="btn_history">تاریخچه تراکنش‌ها</string>
-
-    <!-- وضعیت -->
-    <string name="status_ready_ble">BLE آماده دریافت 💚</string>
-    <string name="status_success">دریافت موفق ✅</string>
-    <string name="status_fail">تراکنش ناموفق ❌</string>
-    <string name="status_enter_amount">لطفاً مبلغ را وارد کنید</string>
+    <string name="app_name">SOMA Merchant Demo</string>
 </resources>
