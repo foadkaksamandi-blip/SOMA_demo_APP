@@ -6,46 +6,32 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v3
         with:
-          distribution: temurin
-          java-version: "17"
+          java-version: '17'
+          distribution: 'temurin'
 
-      # بیلد بدون gradle-wrapper.jar (خود اکشن گرادل 8.7 را می‌آورد)
-      - name: Build Consumer (no wrapper)
-        uses: gradle/gradle-build-action@v3
-        with:
-          gradle-version: 8.7
-          arguments: |
-            :consumer-app:clean
-            :consumer-app:assembleDebug
-          cache-disabled: false
+      - name: Grant Gradle permissions
+        run: chmod +x ./gradlew
 
-      - name: Build Merchant (no wrapper)
-        uses: gradle/gradle-build-action@v3
-        with:
-          gradle-version: 8.7
-          arguments: |
-            :merchant-app:clean
-            :merchant-app:assembleDebug
-          cache-disabled: false
+      - name: Build Consumer & Merchant
+        run: |
+          ./gradlew :consumer-app:clean :consumer-app:assembleDebug \
+                     :merchant-app:clean :merchant-app:assembleDebug
 
       - name: Upload Consumer APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
-          name: consumer-app-debug
+          name: SOMA_Consumer_APK
           path: consumer-app/build/outputs/apk/debug/*.apk
-          if-no-files-found: error
 
       - name: Upload Merchant APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
-          name: merchant-app-debug
+          name: SOMA_Merchant_APK
           path: merchant-app/build/outputs/apk/debug/*.apk
-          if-no-files-found: error
