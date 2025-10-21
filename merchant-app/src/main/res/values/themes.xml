@@ -1,14 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!-- تم اصلی برنامه با Material3 -->
     <style name="Theme.Soma.Merchant" parent="Theme.Material3.Light.NoActionBar">
-        <!-- رنگ‌ها (در صورت وجود colors.xml) -->
+        <!-- رنگ‌ها در صورت وجود -->
         <item name="colorPrimary">@color/purple_500</item>
         <item name="colorSecondary">@color/teal_200</item>
 
-        <!-- دکمه‌های پیش‌فرض اصلاح‌شده -->
-        <item name="materialButtonFilledStyle">@style/Widget.Material3.Button.FilledTonalButton</item>
+        <!-- دکمه‌های پیش‌فرض -->
+        <item name="materialButtonStyle">@style/Widget.Material3.Button.FilledTonalButton</item>
         <item name="materialButtonOutlinedStyle">@style/Widget.Material3.Button.OutlinedButton</item>
     </style>
 
