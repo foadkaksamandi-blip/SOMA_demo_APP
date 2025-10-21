@@ -1,24 +1,31 @@
 package com.soma.consumer.qr
 
 import android.app.Activity
-import androidx.activity.result.ActivityResultCaller
+import android.content.Intent
+import androidx.activity.result.ActivityResultLauncher
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
 
+/**
+ * QrScanner – یک wrapper ساده روی ZXing که از Activity Result API استفاده می‌کند
+ */
 class QrScanner(
-    caller: ActivityResultCaller,
+    private val launcher: ActivityResultLauncher<Intent>,
     private val onResult: (String?) -> Unit
 ) {
-    private val launcher = caller.registerForActivityResult(ScanContract()) { result ->
-        onResult(result.contents)
-    }
-
-    fun start(activity: Activity) {
+    fun launch() {
         val options = ScanOptions()
             .setDesiredBarcodeFormats(ScanOptions.QR_CODE)
-            .setPrompt("QR را داخل کادر قرار دهید")
-            .setBeepEnabled(false)
-            .setOrientationLocked(true)
-        launcher.launch(options)
+            .setPrompt("QR را مقابل دوربین بگیرید")
+            .setBeepEnabled(true)
+            .setOrientationLocked(false)
+        launcher.launch(ScanContract().createIntent(null, options))
+    }
+
+    companion object {
+        fun parseResult(resultCode: Int, data: Intent?): String? {
+            val result = ScanContract().parseResult(resultCode, data)
+            return result?.contents
+        }
     }
 }
