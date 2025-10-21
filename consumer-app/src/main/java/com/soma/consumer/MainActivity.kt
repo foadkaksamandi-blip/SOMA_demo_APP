@@ -1,63 +1,78 @@
 package com.soma.consumer
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import com.journeyapps.barcodescanner.ScanContract
-import com.journeyapps.barcodescanner.ScanOptions
+import androidx.core.content.ContextCompat
 import com.soma.consumer.ble.BleClient
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), BleClient.Listener {
 
-    private lateinit var tvStatus: TextView
-    private lateinit var tvResult: TextView
-    private lateinit var btnScanQr: Button
-    private lateinit var btnStartBle: Button
-    private lateinit var btnStopBle: Button
+    private lateinit var statusTv: TextView
+    private lateinit var resultTv: TextView
+    private lateinit var startBtn: Button
+    private lateinit var stopBtn: Button
+    private lateinit var qrBtn: Button
 
     private lateinit var bleClient: BleClient
 
-    // لانچر رسمی ZXing (بدون کلاس واسط)
-    private val qrLauncher = registerForActivityResult(ScanContract()) { result ->
-        val text = result?.contents
-        tvResult.text = if (text.isNullOrEmpty()) "نتیجه: -" else "نتیجه: $text"
+    private val permLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { _ ->
+        // بعد از اعطای مجوز دوباره تلاش کن
+        bleClient.start()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        tvStatus = findViewById(R.id.tvStatus)
-        tvResult = findViewById(R.id.tvResult)
-        btnScanQr = findViewById(R.id.btnScanQr)
-        btnStartBle = findViewById(R.id.btnStartBle)
-        btnStopBle = findViewById(R.id.btnStopBle)
+        statusTv = findViewById(R.id.tvStatus)
+        resultTv = findViewById(R.id.tvResult)
+        startBtn = findViewById(R.id.btnStartBle)
+        stopBtn = findViewById(R.id.btnStopBle)
+        qrBtn = findViewById(R.id.btnScanQr)
 
-        // توجه: طبق لاگ‌ها BleClient فقط یک Context می‌گیرد.
-        bleClient = BleClient(this)
+        bleClient = BleClient(this, this)
 
-        btnScanQr.setOnClickListener {
-            val options = ScanOptions()
-                .setDesiredBarcodeFormats(ScanOptions.QR_CODE)
-                .setPrompt("QR را مقابل دوربین بگیرید")
-                .setBeepEnabled(true)
-                .setOrientationLocked(false)
-            qrLauncher.launch(options)
+        startBtn.setOnClickListener {
+            ensurePermsThen { bleClient.start() }
+        }
+        stopBtn.setOnClickListener { bleClient.stop() }
+
+        qrBtn.setOnClickListener {
+            // اگر اسکنر QR دارید، همون Activity قبلی‌تون رو صدا بزنید
+            resultTv.text = "QR: شبیه‌سازی - اینجا اسکنر خودتون را باز کنید"
         }
 
-        // چون امضای متدهای BleClient را نداریم و لاگ گفت stop وجود ندارد،
-        // فعلاً فقط وضعیت UI را آپدیت می‌کنیم تا بیلد سبز شود.
-        btnStartBle.setOnClickListener {
-            tvStatus.text = "وضعیت: تلاش برای اتصال BLE"
-            // TODO: اگر API صحیح BleClient را می‌دانیم، اینجا فراخوانی واقعی را بگذاریم.
-            // مثلا: bleClient.startScan() یا bleClient.connect(...)
-        }
-
-        btnStopBle.setOnClickListener {
-            tvStatus.text = "وضعیت: متوقف"
-            // TODO: اگر API صحیح BleClient را می‌دانیم، اینجا فراخوانی واقعی را بگذاریم.
-            // مثلا: bleClient.disconnect() یا bleClient.stopScan()
-        }
+        onStatus("آماده")
     }
+
+    private fun ensurePermsThen(block: () -> Unit) {
+        if (Build.VERSION.SDK_INT >= 31) {
+            val need = arrayOf(
+                Manifest.permission.BLUETOOTH_SCAN,
+                Manifest.permission.BLUETOOTH_CONNECT
+            ).any { ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED }
+            if (need) {
+                permLauncher.launch(arrayOf(
+                    Manifest.permission.BLUETOOTH_SCAN,
+                    Manifest.permission.BLUETOOTH_CONNECT
+                ))
+                return
+            }
+        }
+        block()
+    }
+
+    // ===== BleClient.Listener =====
+    override fun onStatus(msg: String) { statusTv.text = "وضعیت: $msg" }
+    override fun onConnected(deviceName: String?) { resultTv.text = "اتصال به: ${deviceName ?: "-"}" }
+    override fun onDisconnected() { resultTv.text = "قطع شد" }
+    override fun onError(msg: String) { resultTv.text = "خطا: $msg" }
 }
