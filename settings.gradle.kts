@@ -15,6 +15,7 @@ dependencyResolutionManagement {
 
 rootProject.name = "SOMA_demo_APP"
 
-// ماژول‌ها را در مرحله‌های بعد اضافه می‌کنیم
-// فاز 2 و 3:
-// include(":consumer-app", ":merchant-app")
+// مرحله ۲: افزودن ماژول خریدار
+include(":consumer-app")
+// مرحله ۳ اضافه خواهد شد:
+// include(":merchant-app")
