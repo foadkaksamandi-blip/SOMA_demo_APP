@@ -1,16 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- تم حرفه‌ای بانکی برای اپ فروشنده -->
-    <style name="SomaMerchantTheme" parent="Theme.Material3.Light.NoActionBar">
-        <item name="colorPrimary">#059669</item>
-        <item name="colorPrimaryContainer">#0B7F58</item>
-        <item name="colorSecondary">#0F172A</item>
+    <!-- تم اصلی برنامه: حتماً از Material3 -->
+    <style name="Theme.Soma.Merchant" parent="Theme.Material3.Light.NoActionBar">
+        <!-- رنگ‌ها در صورت نیاز -->
+        <item name="colorPrimary">@color/purple_500</item>
+        <item name="colorPrimaryContainer">@color/purple_700</item>
+        <item name="colorSecondary">@color/teal_200</item>
 
-        <!-- سیستم -->
-        <item name="android:statusBarColor">#0B7F58</item>
-        <item name="android:navigationBarColor">#0B7F58</item>
-
-        <!-- فونت و رنگ متن پیش‌فرض -->
-        <item name="android:textColorPrimary">#0F172A</item>
-        <item name="android:textColorSecondary">#475569</item>
+        <!-- دکمه‌های پیش‌فرض -->
+        <item name="materialButtonFilledStyle">@style/Widget.Material3.Button.Filled</item>
+        <item name="materialButtonOutlinedStyle">@style/Widget.Material3.Button.Outlined</item>
     </style>
 </resources>
