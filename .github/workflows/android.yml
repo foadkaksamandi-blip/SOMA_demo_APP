@@ -21,17 +21,15 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      # استفاده از Gradle Action رسمی — نیازی به gradlew فیزیکی نیست
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
-
-      # اجرای بیلد با Gradle Action (نه فایل gradlew)
+      # اجرای بیلد با Gradle 8.7 بدون نیاز به gradlew
       - name: Build Consumer & Merchant (Debug)
-        run: |
-          gradle :consumer-app:assembleDebug
-          gradle :merchant-app:assembleDebug
+        uses: gradle/gradle-build-action@v3
+        with:
+          gradle-version: 8.7
+          arguments: |
+            :consumer-app:assembleDebug
+            :merchant-app:assembleDebug
 
-      # آپلود خروجی‌ها با نسخه جدید اکشن
       - name: Upload Consumer APK(s)
         uses: actions/upload-artifact@v4
         with:
