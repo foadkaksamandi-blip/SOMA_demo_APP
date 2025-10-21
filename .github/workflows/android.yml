@@ -21,22 +21,17 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      # اکشن رسمی گرادل (کش خودکار + اسکن اختیاری)
+      # استفاده از Gradle Action رسمی — نیازی به gradlew فیزیکی نیست
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
-      # اگر gradlew داخل رپو هست لازم می‌شود
-      - name: Grant Gradle Wrapper permissions
-        run: chmod +x ./gradlew
-
-      - name: Clean
-        run: ./gradlew clean
-
-      # اگر هر دو ماژول دارید (consumer-app و merchant-app)
+      # اجرای بیلد با Gradle Action (نه فایل gradlew)
       - name: Build Consumer & Merchant (Debug)
-        run: ./gradlew :consumer-app:assembleDebug :merchant-app:assembleDebug
+        run: |
+          gradle :consumer-app:assembleDebug
+          gradle :merchant-app:assembleDebug
 
-      # آپلود خروجی‌ها با v4 (سازگار با تغییرات جدید گیت‌هاب)
+      # آپلود خروجی‌ها با نسخه جدید اکشن
       - name: Upload Consumer APK(s)
         uses: actions/upload-artifact@v4
         with:
