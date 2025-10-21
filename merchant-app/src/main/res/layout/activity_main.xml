@@ -1,321 +1,82 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/rootScroll"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fillViewport="true"
-    android:background="#059669">
+    android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="20dp">
 
-        <!-- Header -->
         <com.google.android.material.textview.MaterialTextView
-            android:id="@+id/tvHeader"
-            android:layout_width="match_parent"
+            android:id="@+id/tvTitle"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/header_title"
+            android:text="SOMA Merchant"
             android:textSize="22sp"
             android:textStyle="bold"
-            android:textColor="@android:color/white"
-            android:gravity="center" />
+            android:paddingBottom="16dp" />
 
-        <com.google.android.material.textview.MaterialTextView
-            android:id="@+id/tvSubHeader"
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/header_sub"
-            android:textSize="16sp"
-            android:textColor="@android:color/white"
-            android:gravity="center"
-            android:layout_marginTop="4dp" />
+            app:hintEnabled="true"
+            android:hint="Amount">
 
-        <!-- کارت موجودی + وضعیت -->
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etAmount"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="numberDecimal" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnGenerateQr"
+            style="@style/Widget.Material3.Button.FilledButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Generate QR"
+            android:layout_marginTop="16dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnListenBluetooth"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Listen via Bluetooth"
+            android:layout_marginTop="10dp" />
+
         <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardTxnStatus"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            app:cardCornerRadius="16dp"
-            app:cardUseCompatPadding="true"
-            app:strokeWidth="0dp">
+            app:cardUseCompatPadding="true">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:padding="16dp"
                 android:orientation="vertical"
-                android:background="#0B7F58">
+                android:padding="16dp">
 
                 <com.google.android.material.textview.MaterialTextView
-                    android:id="@+id/balanceView"
-                    android:layout_width="match_parent"
+                    android:id="@+id/tvTxnResult"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="موجودی: 5,000,000 تومان"
-                    android:textColor="@android:color/white"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
+                    android:text="Waiting for transaction..."
+                    android:textSize="16sp" />
 
                 <com.google.android.material.textview.MaterialTextView
-                    android:id="@+id/statusView"
-                    android:layout_width="match_parent"
+                    android:id="@+id/tvTxnCode"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/status_ready_ble"
-                    android:textColor="@android:color/white"
+                    android:text=""
                     android:layout_marginTop="6dp" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
-
-        <!-- مبلغ خرید + دکمه‌های اصلی -->
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            app:cardCornerRadius="16dp"
-            app:cardUseCompatPadding="true">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <com.google.android.material.textview.MaterialTextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/label_amount"
-                    android:textStyle="bold"
-                    android:textColor="@android:color/black" />
-
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/tilAmount"
-                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etAmount"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="number"
-                        android:hint="مثلاً 250000" />
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center"
-                    android:layout_marginTop="12dp">
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnBleReceive"
-                        style="@style/Widget.Material3.Button.ElevatedButton"
-                        android:layout_width="0dp"
-                        android:layout_height="48dp"
-                        android:layout_weight="1"
-                        android:text="@string/btn_ble_receive"
-                        app:iconGravity="textStart"
-                        app:cornerRadius="16dp" />
-
-                    <Space
-                        android:layout_width="10dp"
-                        android:layout_height="1dp" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnGenerateQr"
-                        style="@style/Widget.Material3.Button.FilledTonalButton"
-                        android:layout_width="0dp"
-                        android:layout_height="48dp"
-                        android:layout_weight="1"
-                        android:text="@string/btn_generate_qr"
-                        app:cornerRadius="16dp" />
-                </LinearLayout>
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- سکشن‌های ویژه -->
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            app:cardCornerRadius="16dp"
-            app:cardUseCompatPadding="true">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <com.google.android.material.textview.MaterialTextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="رمز ارز ملی"
-                    android:textStyle="bold"
-                    android:textColor="#7C3AED" />
-
-                <com.google.android.material.textview.MaterialTextView
-                    android:id="@+id/tvCbdcBalance"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="موجودی: 0 تومان"
-                    android:textColor="@android:color/black"
-                    android:layout_marginTop="4dp" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center"
-                    android:layout_marginTop="12dp">
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnCbdcBle"
-                        style="@style/Widget.Material3.Button.ElevatedButton"
-                        android:layout_width="0dp"
-                        android:layout_height="44dp"
-                        android:layout_weight="1"
-                        android:text="@string/btn_recv_cbdc" />
-
-                    <Space
-                        android:layout_width="10dp"
-                        android:layout_height="1dp" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnCbdcQr"
-                        style="@style/Widget.Material3.Button.FilledTonalButton"
-                        android:layout_width="0dp"
-                        android:layout_height="44dp"
-                        android:layout_weight="1"
-                        android:text="@string/btn_generate_qr" />
-                </LinearLayout>
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            app:cardCornerRadius="16dp"
-            app:cardUseCompatPadding="true">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <com.google.android.material.textview.MaterialTextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="یارانه ملی"
-                    android:textStyle="bold"
-                    android:textColor="#F97316" />
-
-                <com.google.android.material.textview.MaterialTextView
-                    android:id="@+id/tvSubsidyBalance"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="موجودی: 0 تومان"
-                    android:textColor="@android:color/black"
-                    android:layout_marginTop="4dp" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center"
-                    android:layout_marginTop="12dp">
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnSubsidyBle"
-                        style="@style/Widget.Material3.Button.ElevatedButton"
-                        android:layout_width="0dp"
-                        android:layout_height="44dp"
-                        android:layout_weight="1"
-                        android:text="@string/btn_recv_subsidy" />
-
-                    <Space
-                        android:layout_width="10dp"
-                        android:layout_height="1dp" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnSubsidyQr"
-                        style="@style/Widget.Material3.Button.FilledTonalButton"
-                        android:layout_width="0dp"
-                        android:layout_height="44dp"
-                        android:layout_weight="1"
-                        android:text="@string/btn_generate_qr" />
-                </LinearLayout>
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            app:cardCornerRadius="16dp"
-            app:cardUseCompatPadding="true">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <com.google.android.material.textview.MaterialTextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="اعتبار اضطراری ملی"
-                    android:textStyle="bold"
-                    android:textColor="#16A34A" />
-
-                <com.google.android.material.textview.MaterialTextView
-                    android:id="@+id/tvEmergencyBalance"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="موجودی: 0 تومان"
-                    android:textColor="@android:color/black"
-                    android:layout_marginTop="4dp" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center"
-                    android:layout_marginTop="12dp">
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnEmergencyBle"
-                        style="@style/Widget.Material3.Button.ElevatedButton"
-                        android:layout_width="0dp"
-                        android:layout_height="44dp"
-                        android:layout_weight="1"
-                        android:text="@string/btn_recv_emergency" />
-
-                    <Space
-                        android:layout_width="10dp"
-                        android:layout_height="1dp" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnEmergencyQr"
-                        style="@style/Widget.Material3.Button.FilledTonalButton"
-                        android:layout_width="0dp"
-                        android:layout_height="44dp"
-                        android:layout_weight="1"
-                        android:text="@string/btn_generate_qr" />
-                </LinearLayout>
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <Space
-            android:layout_width="1dp"
-            android:layout_height="24dp" />
 
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>
