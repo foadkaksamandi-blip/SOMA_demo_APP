@@ -1,0 +1,51 @@
+name: Build APKs (SOMA Offline Demo)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      # بیلد بدون gradle-wrapper.jar (خود اکشن گرادل 8.7 را می‌آورد)
+      - name: Build Consumer (no wrapper)
+        uses: gradle/gradle-build-action@v3
+        with:
+          gradle-version: 8.7
+          arguments: |
+            :consumer-app:clean
+            :consumer-app:assembleDebug
+          cache-disabled: false
+
+      - name: Build Merchant (no wrapper)
+        uses: gradle/gradle-build-action@v3
+        with:
+          gradle-version: 8.7
+          arguments: |
+            :merchant-app:clean
+            :merchant-app:assembleDebug
+          cache-disabled: false
+
+      - name: Upload Consumer APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: consumer-app-debug
+          path: consumer-app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+
+      - name: Upload Merchant APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: merchant-app-debug
+          path: merchant-app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
