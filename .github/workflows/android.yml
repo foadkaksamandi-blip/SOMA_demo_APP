@@ -1,4 +1,4 @@
-name: Build APKs (SOMA Offline Demo)
+: Build APKs (SOMA Offline Demo)
 
 on:
   workflow_dispatch:
@@ -34,4 +34,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: SOMA_Merchant_APK
-          path: merchant-app/build/outputs/apk/debug/*.apk
+          path: merchant-app/build/outputs/
