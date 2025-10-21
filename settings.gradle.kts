@@ -1,5 +1,3 @@
-import org.gradle.api.initialization.resolve.RepositoriesMode
-
 pluginManagement {
     repositories {
         google()
@@ -9,12 +7,13 @@ pluginManagement {
 }
 
 dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS) // یا همین مقدار را نگه‌دار
+    repositoriesMode.set(RepositoriesMode.PREFER_PROJECT)
     repositories {
         google()
         mavenCentral()
+        gradlePluginPortal()
     }
 }
 
 rootProject.name = "SOMA_demo_APP"
-include(":consumer-app", ":merchant-app")
+include(":consumer-app")
