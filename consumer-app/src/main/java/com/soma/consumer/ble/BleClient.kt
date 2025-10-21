@@ -10,6 +10,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.os.ParcelUuid   // ✅ خط اضافه‌شده برای رفع خطای Unresolved reference
 import androidx.core.app.ActivityCompat
 import kotlinx.coroutines.*
 import java.util.*
@@ -77,7 +78,6 @@ class BleClient(
             ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED &&
                     ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED
         } else {
-            // برای اندروید‌های قدیمی‌تر موقع اجرا Location لازم است (Manifest هم باید داشته باشیم)
             true
         }
     }
