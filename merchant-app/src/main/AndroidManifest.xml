@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- مجوزها: BLE + QR (دوربین برای نمایش QR لازم نیست، اما برای آینده مشکلی ندارد) -->
+    <!-- مجوزها: BLE + QR (دوربین برای آینده، BLE واقعی برای دریافت تراکنش‌ها) -->
     <uses-permission android:name="android.permission.CAMERA" />
     <!-- BLE قدیمی (Android <= 11) -->
     <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
@@ -10,11 +10,12 @@
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
-    <!-- سرویس پیش‌زمینه برای BLE در مرحله بعد -->
+    <!-- سرویس پیش‌زمینه برای BLE -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
-    <!-- فیچرها -->
+    <!-- قابلیت سخت‌افزاری -->
     <uses-feature android:name="android.hardware.bluetooth_le" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.any" android:required="false" />
 
     <application
         android:allowBackup="false"
@@ -24,6 +25,7 @@
         android:usesCleartextTraffic="true"
         android:theme="@style/SomaMerchantTheme">
 
+        <!-- اکتیویتی اصلی -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -36,13 +38,12 @@
             </intent-filter>
         </activity>
 
-        <!-- سرویس BLE در مرحله ۴ اضافه می‌شود -->
-        <!--
+        <!-- سرویس BLE برای دریافت مبلغ از خریدار -->
         <service
             android:name=".ble.BlePeripheralService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="connectedDevice|dataSync" />
-        -->
+
     </application>
 </manifest>
