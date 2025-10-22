@@ -1,34 +1,31 @@
-<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.soma.merchant">
 
-    <!-- BLE permissions -->
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
-    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <!-- Android 12+ -->
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
     <application
-        android:label="SOMA Merchant"
         android:allowBackup="true"
-        android:supportsRtl="true"
-        android:theme="@style/Theme.AppCompat.Light.NoActionBar">
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:icon="@mipmap/ic_launcher">
 
-        <activity
-            android:name=".MainActivity"
-            android:exported="true">
+        <service
+            android:name=".ble.BlePeripheralService"
+            android:exported="false"
+            android:foregroundServiceType="location|connectedDevice" />
+        <!-- activities -->
+        <activity android:name=".MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
 
-        <!-- سرویس فورگراند؛ بدون نوع bluetooth چون در بیلدت پشتیبانی نشده -->
-        <service
-            android:name=".ble.BlePeripheralService"
-            android:enabled="true"
-            android:exported="false"
-            android:foregroundServiceType="connectedDevice|dataSync"/>
     </application>
 </manifest>
