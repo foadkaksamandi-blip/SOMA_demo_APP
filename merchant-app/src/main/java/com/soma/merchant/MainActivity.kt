@@ -7,6 +7,8 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.widget.Button
+import android.widget.EditText
+import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -17,36 +19,53 @@ import com.soma.merchant.ble.BLEPeripheralService
 
 class MainActivity : AppCompatActivity() {
 
-    private val ble = BLEPeripheralService()
+    private lateinit var ble: BLEPeripheralService
+    private lateinit var tvStatus: TextView
+    private lateinit var edtAmount: EditText
+    private lateinit var btnGenQr: Button
+    private lateinit var imgQr: ImageView
+    private lateinit var btnStartBle: Button
+    private lateinit var btnStopBle: Button
 
     private val enableBtLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
-    ) { /* no-op */ }
+    ) { /* ignored */ }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // تلاش برای دریافت ویوها (ممکن است در لایه فعلی نام‌ها فرق داشته باشد)
-        val btnStart: Button? = findViewById(R.id.btnStartBle)
-        val btnStop: Button?  = findViewById(R.id.btnStopBle)
-        val tvStatus: TextView? = findViewById(R.id.tvStatus)
+        // Bind views
+        tvStatus = findViewById(R.id.tvStatus)
+        edtAmount = findViewById(R.id.edtAmount)
+        btnGenQr = findViewById(R.id.btnGenQr)
+        imgQr = findViewById(R.id.ivQr)
+        btnStartBle = findViewById(R.id.btnStartBle)
+        btnStopBle = findViewById(R.id.btnStopBle)
 
-        // اگر هرکدام نبود، پیغام بده ولی کرش نکن
-        if (btnStart == null) Toast.makeText(this, "btnStartBle در layout پیدا نشد", Toast.LENGTH_SHORT).show()
-        if (btnStop  == null) Toast.makeText(this, "btnStopBle در layout پیدا نشد", Toast.LENGTH_SHORT).show()
-        if (tvStatus == null) Toast.makeText(this, "tvStatus در layout پیدا نشد", Toast.LENGTH_SHORT).show()
+        ble = BLEPeripheralService()
 
-        btnStart?.setOnClickListener {
-            if (ensureBluetoothReady()) {
-                ble.startAdvertising(this)
-                tvStatus?.text = "وضعیت: ادورتایز فعال"
+        btnGenQr.setOnClickListener {
+            val amount = edtAmount.text.toString()
+            if (amount.isEmpty()) {
+                Toast.makeText(this, "مبلغ را وارد کنید", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "کد QR برای مبلغ $amount تولید شد", Toast.LENGTH_SHORT).show()
+                tvStatus.text = "QR آماده ارسال"
+                // در آینده QR واقعی اضافه می‌کنیم
             }
         }
 
-        btnStop?.setOnClickListener {
+        btnStartBle.setOnClickListener {
+            if (ensureBluetoothReady()) {
+                ble.startAdvertising(this)
+                tvStatus.text = "BLE فعال شد ✅"
+            }
+        }
+
+        btnStopBle.setOnClickListener {
             ble.stopAdvertising()
-            tvStatus?.text = "وضعیت: متوقف شد"
+            tvStatus.text = "BLE متوقف شد ⛔"
         }
     }
 
@@ -56,6 +75,7 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, "این دستگاه بلوتوث ندارد", Toast.LENGTH_SHORT).show()
             return false
         }
+
         if (!adapter.isEnabled) {
             enableBtLauncher.launch(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE))
             return false
@@ -77,7 +97,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         return if (needed.isNotEmpty()) {
-            ActivityCompat.requestPermissions(this, needed.toTypedArray(), 10)
+            ActivityCompat.requestPermissions(this, needed.toTypedArray(), 100)
             false
         } else true
     }
