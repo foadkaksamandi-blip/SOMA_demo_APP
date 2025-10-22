@@ -2,29 +2,17 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.soma.merchant">
 
-    <!-- مجوزهای مورد نیاز BLE -->
-    <uses-permission android:name="android.permission.BLUETOOTH" />
-    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-
-    <!-- مجوزهای Android 12+ -->
-    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
-    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <!-- BLE (Android 12+) -->
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
-
-    <!-- اجازه اجرا در پیش‌زمینه -->
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
 
     <application
         android:allowBackup="true"
         android:label="SOMA Merchant"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
-        android:supportsRtl="true"
-        android:theme="@style/Theme.AppCompat.Light.NoActionBar">
+        android:theme="@style/Theme.Material3.DayNight.NoActionBar">
 
-        <!-- Activity اصلی -->
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -34,12 +22,11 @@
             </intent-filter>
         </activity>
 
-        <!-- سرویس BLE -->
+        <!-- سرویس BLE مرچنت (اگر دارید) -->
         <service
-            android:name=".BlePeripheralService"
+            android:name=".ble.BlePeripheralService"
             android:enabled="true"
             android:exported="false"
-            android:foregroundServiceType="bluetooth" />
+            android:foregroundServiceType="connectedDevice" />
     </application>
-
 </manifest>
