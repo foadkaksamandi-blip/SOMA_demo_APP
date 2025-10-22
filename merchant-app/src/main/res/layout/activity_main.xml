@@ -1,36 +1,71 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
-    android:padding="24dp"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <TextView
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Merchant App — BLE Server"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:gravity="center"
-        android:paddingBottom="20dp" />
+        android:orientation="vertical"
+        android:padding="24dp">
 
-    <Button
-        android:id="@+id/btnStartBle"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Start Advertising" />
+        <!-- عنوان -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="SOMA — اپ فروشنده (BLE + QR)"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:paddingBottom="16dp"/>
 
-    <Button
-        android:id="@+id/btnStopBle"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Stop Advertising"
-        android:layout_marginTop="12dp" />
+        <!-- مبلغ خرید -->
+        <EditText
+            android:id="@+id/edtAmount"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="مبلغ خرید (تومان)"
+            android:inputType="number"
+            android:padding="12dp" />
 
-    <Button
-        android:id="@+id/btnPay"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Simulate Payment"
-        android:layout_marginTop="12dp" />
-</LinearLayout>
+        <!-- تولید QR -->
+        <Button
+            android:id="@+id/btnGenQr"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="🔳 تولید QR خرید"
+            android:layout_marginTop="12dp" />
+
+        <!-- نمایش QR -->
+        <ImageView
+            android:id="@+id/ivQr"
+            android:layout_width="match_parent"
+            android:layout_height="300dp"
+            android:layout_marginTop="12dp"
+            android:scaleType="fitCenter"
+            android:contentDescription="QR Code"/>
+
+        <!-- وضعیت -->
+        <TextView
+            android:id="@+id/tvStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="وضعیت: -"
+            android:layout_marginTop="16dp" />
+
+        <!-- کنترل BLE (برای سازگاری با کدهای قبلی نگه داشته‌ایم) -->
+        <Button
+            android:id="@+id/btnStartBle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="🔵 شروع BLE"
+            android:layout_marginTop="20dp"/>
+
+        <Button
+            android:id="@+id/btnStopBle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="⛔ توقف BLE"
+            android:layout_marginTop="12dp"/>
+
+    </LinearLayout>
+</ScrollView>
