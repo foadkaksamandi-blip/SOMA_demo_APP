@@ -2,14 +2,12 @@ package com.soma.consumer
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import com.soma.consumer.ble.BleClient
-import android.util.Log
 import com.soma.consumer.databinding.ActivityMainBinding
+import com.soma.consumer.ble.BleClient
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
-    private lateinit var bleClient: BleClient
-    private val TAG = "ConsumerMain"
+    private var bleClient: BleClient? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -19,15 +17,16 @@ class MainActivity : AppCompatActivity() {
         bleClient = BleClient(this)
 
         binding.btnStartBle.setOnClickListener {
-            // example: start scanning
-            bleClient.startScan { address ->
-                Log.d(TAG, "Found: $address")
-                // update UI
-            }
+            bleClient?.startScan()
         }
 
         binding.btnStopBle.setOnClickListener {
-            bleClient.disconnect()
+            bleClient?.stopScan()
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        bleClient?.stopScan()
     }
 }
