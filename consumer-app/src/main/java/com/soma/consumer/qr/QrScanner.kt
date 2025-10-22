@@ -1,30 +1,14 @@
 package com.soma.consumer.qr
 
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
-import com.journeyapps.barcodescanner.ScanContract
-import com.journeyapps.barcodescanner.ScanOptions
+import android.app.Activity
 
-class QRScanner(
-    activity: AppCompatActivity,
-    private val onResult: (String) -> Unit
-) {
-    private val launcher =
-        activity.registerForActivityResult(ScanContract()) { result ->
-            if (result != null && result.contents != null) {
-                onResult(result.contents)
-            } else {
-                onResult("لغو شد")
-            }
-        }
-
-    fun startScan() {
-        val options = ScanOptions().apply {
-            setDesiredBarcodeFormats(ScanOptions.QR_CODE)
-            setBeepEnabled(false)
-            setPrompt("QR را اسکن کنید")
-        }
-        launcher.launch(options)
+object QrScanner {
+    fun startScan(
+        activity: Activity,
+        onResult: (String) -> Unit,
+        onError: (Throwable) -> Unit
+    ) {
+        // اگر قبلاً پیاده‌سازی‌ داری، همان را نگه‌دار.
+        onError(UnsupportedOperationException("QR implementation is external in this build"))
     }
 }
