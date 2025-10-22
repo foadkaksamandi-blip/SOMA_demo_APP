@@ -2,35 +2,24 @@ package com.soma.merchant
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import com.soma.merchant.databinding.ActivityMainBinding
-import com.soma.merchant.ble.BlePeripheralService
+import com.soma.merchant.ble.BLEPeripheralService
 
 class MainActivity : AppCompatActivity() {
-    private lateinit var binding: ActivityMainBinding
-    private var bleService: BlePeripheralService? = null
+
+    private lateinit var blePeripheralService: BLEPeripheralService
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+        setContentView(R.layout.activity_main)
 
-        bleService = BlePeripheralService(this)
+        blePeripheralService = BLEPeripheralService(this)
 
-        binding.btnStartBle.setOnClickListener {
-            bleService?.startAdvertising()
-        }
-
-        binding.btnStopBle.setOnClickListener {
-            bleService?.stopAdvertising()
-        }
-
-        binding.btnPay.setOnClickListener {
-            bleService?.simulatePayment()
-        }
+        // شروع تبلیغ BLE هنگام اجرا
+        blePeripheralService.startAdvertising()
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        bleService?.stopAdvertising()
+        blePeripheralService.stopAdvertising()
     }
 }
