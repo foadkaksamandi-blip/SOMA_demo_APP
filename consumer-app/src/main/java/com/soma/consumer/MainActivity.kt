@@ -1,90 +1,66 @@
 package com.soma.consumer
 
 import android.Manifest
-import android.bluetooth.BluetoothAdapter
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
-import android.widget.Button
-import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import com.soma.consumer.ble.BleClient
-import java.util.*
+import com.soma.consumer.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
 
+    private lateinit var binding: ActivityMainBinding
     private lateinit var bleClient: BleClient
-    private lateinit var logView: TextView
-    private lateinit var btnStart: Button
-    private lateinit var btnStop: Button
-
-    private val permissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { _ ->
-            // بعد از درخواست مجوزها
-        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
-        logView = findViewById(R.id.logView)
-        btnStart = findViewById(R.id.btnStart)
-        btnStop = findViewById(R.id.btnStop)
+        bleClient = BleClient(this)
 
-        bleClient = BleClient(
-            context = this,
-            onLog = { appendLog(it) },
-            onTxnResult = { success, msg ->
-                appendLog("Result: $success, $msg")
+        binding.btnScanQr.setOnClickListener {
+            binding.tvResult.text = "نتیجه: اسکن QR (نمونه)"
+        }
+
+        binding.btnStart.setOnClickListener {
+            ensureBlePermissions {
+                binding.tvStatus.text = "وضعیت: تلاش برای اتصال BLE"
+                bleClient.start(
+                    onConnected = { runOnUiThread { binding.tvStatus.text = "وضعیت: متصل" } },
+                    onDisconnected = { runOnUiThread { binding.tvStatus.text = "وضعیت: قطع اتصال" } },
+                    onError = { msg -> runOnUiThread { binding.tvStatus.text = "خطا: $msg" } }
+                )
             }
-        )
-
-        btnStart.setOnClickListener {
-            checkPermissionsAndStart()
         }
 
-        btnStop.setOnClickListener {
+        binding.btnStop.setOnClickListener {
             bleClient.stop()
-            appendLog("Stopped manually")
+            binding.tvStatus.text = "وضعیت: متوقف شد"
         }
     }
 
-    private fun appendLog(text: String) {
-        runOnUiThread {
-            logView.append(text + "\n")
-        }
-    }
+    private val permissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { }
 
-    private fun checkPermissionsAndStart() {
-        val required = mutableListOf(
-            Manifest.permission.BLUETOOTH_SCAN,
-            Manifest.permission.BLUETOOTH_CONNECT,
+    private fun ensureBlePermissions(onGranted: () -> Unit) {
+        val perms = mutableListOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION
         )
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
-            required.add(Manifest.permission.ACCESS_FINE_LOCATION)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            perms += listOf(
+                Manifest.permission.BLUETOOTH_SCAN,
+                Manifest.permission.BLUETOOTH_CONNECT
+            )
         }
-
-        val missing = required.filter {
-            ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
+        val need = perms.any {
+            ActivityCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
         }
-
-        if (missing.isNotEmpty()) {
-            permissionLauncher.launch(missing.toTypedArray())
-            appendLog("Requesting permissions…")
-        } else {
-            startBleScan()
-        }
-    }
-
-    private fun startBleScan() {
-        val adapter = BluetoothAdapter.getDefaultAdapter()
-        if (adapter == null || !adapter.isEnabled) {
-            appendLog("Bluetooth OFF")
-            return
-        }
-        appendLog("Starting BLE scan…")
-        bleClient.start(UUID.fromString("0000feed-0000-1000-8000-00805f9b34fb"))
+        if (need) permissionLauncher.launch(perms.toTypedArray()) else onGranted()
     }
 }
