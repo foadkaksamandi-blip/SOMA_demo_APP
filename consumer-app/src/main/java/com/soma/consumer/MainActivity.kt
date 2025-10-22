@@ -14,14 +14,23 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        bleClient = BleClient(this)
+        // BleClient با callback تعریف می‌شود
+        bleClient = BleClient(
+            context = this,
+            onFound = { device ->
+                // وقتی دستگاه پیدا شد، روی صفحه نشان داده شود (اختیاری)
+                binding.txtStatus.text = "Found: ${device.name ?: "Unknown"}"
+            }
+        )
 
         binding.btnStartBle.setOnClickListener {
             bleClient?.startScan()
+            binding.txtStatus.text = "Scanning..."
         }
 
         binding.btnStopBle.setOnClickListener {
             bleClient?.stopScan()
+            binding.txtStatus.text = "Stopped"
         }
     }
 
