@@ -1,10 +1,8 @@
-// فایل ریشه پروژه SOMA_demo_APP
+// ===== Root Gradle File for SOMA Offline Demo =====
 
 plugins {
-    id("com.android.application") version "8.6.1" apply false
-    id("org.jetbrains.kotlin.android") version "1.9.24" apply false
+    id("com.android.application") version "8.5.2" apply false
+    kotlin("android") version "1.9.24" apply false
 }
 
-tasks.register("clean", Delete::class) {
-    delete(rootProject.buildDir)
-}
+// تنظیمات اضافی معمولاً در settings.gradle.kts تعریف می‌شوند.
