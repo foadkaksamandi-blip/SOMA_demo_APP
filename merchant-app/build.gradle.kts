@@ -13,7 +13,6 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -25,18 +24,12 @@ android {
                 "proguard-rules.pro"
             )
         }
-        debug {
-            isMinifyEnabled = false
-        }
+        debug { isMinifyEnabled = false }
     }
 
-    buildFeatures {
-        viewBinding = true
-    }
+    buildFeatures { viewBinding = true }
 
-    kotlinOptions {
-        jvmTarget = "17"
-    }
+    kotlinOptions { jvmTarget = "17" }
 }
 
 dependencies {
@@ -46,8 +39,7 @@ dependencies {
     implementation("androidx.activity:activity-ktx:1.8.2")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
 
-    // QR (ZXing – JourneyApps)
-    implementation("com.journeyapps:zxing-android-embedded:4.3.0") { isTransitive = false }
+    // فقط برای «تولید QR». اگر تولید QR هم نداری، این خط را هم حذف کن.
     implementation("com.google.zxing:core:3.5.1")
 
     testImplementation("junit:junit:4.13.2")
