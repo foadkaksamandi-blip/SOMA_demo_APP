@@ -6,11 +6,6 @@ import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import com.journeyapps.barcodescanner.IntentIntegrator
 
-/**
- * ساده‌ترین اسکنر QR با ZXing-Embedded.
- * امضا دقیقاً مطابق استفاده در MainActivity:
- *   startScan(onResult = { ... }, onCancel = { ... })
- */
 class QrScanner(private val activity: Activity) {
 
     private val launcher = activity.registerForActivityResult(
@@ -23,7 +18,6 @@ class QrScanner(private val activity: Activity) {
         } else {
             onCancelCallback?.invoke()
         }
-        // مصرف و آزادسازی
         onResultCallback = null
         onCancelCallback = null
     }
@@ -43,7 +37,6 @@ class QrScanner(private val activity: Activity) {
             setPrompt("QR را اسکن کنید")
             setBeepEnabled(false)
             setOrientationLocked(true)
-            // از createScanIntent استفاده می‌کنیم تا با Activity Result Launcher کار کند
         }
         val intent = integrator.createScanIntent()
         launcher.launch(intent)
