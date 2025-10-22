@@ -28,6 +28,7 @@ class BLEPeripheralService(private val context: Context) {
 
     fun startAdvertising() {
         if (advertising) return
+        val adv = advertiser ?: return
         advertising = true
 
         val settings = AdvertiseSettings.Builder()
@@ -41,7 +42,12 @@ class BLEPeripheralService(private val context: Context) {
             .setIncludeDeviceName(true)
             .build()
 
-        advertiser?.startAdvertising(settings, data, advertiseCallback)
+        try {
+            adv.startAdvertising(settings, data, advertiseCallback)
+        } catch (t: Throwable) {
+            advertising = false
+            throw t
+        }
     }
 
     fun stopAdvertising() {
@@ -50,7 +56,5 @@ class BLEPeripheralService(private val context: Context) {
         advertiser?.stopAdvertising(advertiseCallback)
     }
 
-    fun simulatePayment(amount: Double): Boolean {
-        return amount > 0
-    }
+    fun simulatePayment(amount: Double): Boolean = amount > 0
 }
