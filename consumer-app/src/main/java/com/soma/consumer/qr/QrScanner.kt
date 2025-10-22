@@ -1,32 +1,37 @@
 package com.soma.consumer.qr
 
+import androidx.activity.result.ActivityResultLauncher
 import androidx.appcompat.app.AppCompatActivity
 import com.journeyapps.barcodescanner.ScanContract
+import com.journeyapps.barcodescanner.ScanIntentResult
 import com.journeyapps.barcodescanner.ScanOptions
 
 class QrScanner(private val activity: AppCompatActivity) {
 
-    private var onResult: ((String) -> Unit)? = null
-    private var onCancel: (() -> Unit)? = null
+    private var launcher: ActivityResultLauncher<ScanOptions>
+    private var onResultCallback: ((String) -> Unit)? = null
+    private var onCancelCallback: (() -> Unit)? = null
 
-    private val launcher = activity.registerForActivityResult(ScanContract()) { result ->
-        if (result.contents != null) {
-            onResult?.invoke(result.contents!!)
-        } else {
-            onCancel?.invoke()
+    init {
+        launcher = activity.registerForActivityResult(ScanContract()) { result: ScanIntentResult ->
+            if (result.contents != null) {
+                onResultCallback?.invoke(result.contents!!)
+            } else {
+                onCancelCallback?.invoke()
+            }
         }
     }
 
-    fun startScan(onResult: (String) -> Unit, onCancel: () -> Unit) {
-        this.onResult = onResult
-        this.onCancel = onCancel
+    fun startScan(onResult: (String) -> Unit, onCancel: () -> Unit = {}) {
+        onResultCallback = onResult
+        onCancelCallback = onCancel
 
-        val opts = ScanOptions()
+        val options = ScanOptions()
             .setDesiredBarcodeFormats(ScanOptions.QR_CODE)
             .setBeepEnabled(true)
-            .setPrompt("لطفاً QR را در کادر قرار دهید")
+            .setPrompt("کُد را اسکن کنید")
             .setOrientationLocked(true)
 
-        launcher.launch(opts)
+        launcher.launch(options)
     }
 }
