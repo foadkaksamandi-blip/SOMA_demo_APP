@@ -1,42 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
-    android:padding="16dp"
+    android:padding="24dp"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
     <TextView
-        android:id="@+id/tvStatus"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="وضعیت: آماده"
+        android:text="Consumer App — BLE Client"
         android:textSize="18sp"
-        android:paddingBottom="12dp"/>
+        android:textStyle="bold"
+        android:gravity="center"
+        android:paddingBottom="20dp" />
 
     <Button
-        android:id="@+id/btnQr"
-        android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:text="اسکن QR" />
-
-    <Button
-        android:id="@+id/btnStart"
-        android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:text="شروع BLE"
-        android:layout_marginTop="12dp"/>
-
-    <Button
-        android:id="@+id/btnStop"
-        android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:text="توقف BLE"
-        android:layout_marginTop="12dp"/>
-
-    <TextView
-        android:id="@+id/tvResult"
+        android:id="@+id/btnStartBle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="نتیجه: -"
-        android:layout_marginTop="16dp"/>
+        android:text="Start BLE Scan" />
+
+    <Button
+        android:id="@+id/btnStopBle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Stop BLE Scan"
+        android:layout_marginTop="12dp" />
+
 </LinearLayout>
