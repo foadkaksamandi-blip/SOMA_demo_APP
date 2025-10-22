@@ -7,14 +7,13 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:gravity="center_horizontal"
         android:padding="24dp">
 
         <TextView
             android:id="@+id/tvStatus"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="وضعیت BLE"
+            android:text="وضعیت: -"
             android:textSize="16sp"
             android:textStyle="bold"
             android:padding="8dp" />
@@ -23,29 +22,28 @@
             android:id="@+id/tvResult"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="نتیجه QR"
-            android:textSize="16sp"
+            android:text="نتیجه: -"
             android:padding="8dp" />
 
         <Button
-            android:id="@+id/btnScan"
+            android:id="@+id/btnQR"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="📷 اسکن QR"
+            android:text="📷 اسکن QR" />
+
+        <Button
+            android:id="@+id/btnStartScan"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="🔵 شروع اسکن BLE"
             android:layout_marginTop="16dp" />
 
         <Button
-            android:id="@+id/btnStartBle"
+            android:id="@+id/btnStopScan"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="🔵 شروع BLE"
-            android:layout_marginTop="16dp" />
+            android:text="⛔ توقف اسکن"
+            android:layout_marginTop="12dp" />
 
-        <Button
-            android:id="@+id/btnStopBle"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="⛔ توقف BLE"
-            android:layout_marginTop="16dp" />
     </LinearLayout>
 </ScrollView>
