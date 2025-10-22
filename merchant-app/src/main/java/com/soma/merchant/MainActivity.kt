@@ -21,14 +21,13 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnStartBle: Button
     private lateinit var btnStopBle: Button
 
-    // سرویس Peripheral
+    // سرویس BLE (بعد از اجازه ساخته می‌شود)
     private var ble: BLEPeripheralService? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Bind
         tvStatus = findViewById(R.id.tvStatus)
         edtAmount = findViewById(R.id.edtAmount)
         btnGenQr = findViewById(R.id.btnGenQr)
@@ -36,29 +35,25 @@ class MainActivity : AppCompatActivity() {
         btnStartBle = findViewById(R.id.btnStartBle)
         btnStopBle = findViewById(R.id.btnStopBle)
 
-        // Init BLE Peripheral safely
-        try {
-            ble = BLEPeripheralService()
-        } catch (e: Throwable) {
-            ble = null
-            tvStatus.text = "خطا در راه‌اندازی BLE"
-        }
+        // اجازه‌ها سپس init
+        checkAndRequestPerms { initAfterPerms() }
 
         btnGenQr.setOnClickListener {
-            val amount = edtAmount.text?.toString()?.trim().orEmpty()
+            val amount = edtAmount.text.toString()
             if (amount.isEmpty()) {
                 Toast.makeText(this, "مبلغ را وارد کنید", Toast.LENGTH_SHORT).show()
             } else {
-                // اینجا QR را با روش خودت بساز (اگر کلاس/متد آماده داری)
-                tvStatus.text = "QR آماده شد برای مبلغ $amount"
-                // imgQr.setImageBitmap(qrBitmap)  // در صورت داشتن خروجی
+                // این‌جا QR تولید کن (فعلاً فقط پیام):
+                tvStatus.text = "QR ایجاد شد برای مبلغ $amount"
+                // اگر کلاس تولید QR داری این‌جا تصویر را در imgQr بگذار.
             }
         }
 
         btnStartBle.setOnClickListener {
-            if (!ensureBleAdvertisePermissions()) return@setOnClickListener
-            ble?.startAdvertising(this)
-            tvStatus.text = "BLE فعال شد ✅"
+            if (ensureBleReady()) {
+                ble?.startAdvertising(this)
+                tvStatus.text = "BLE فعال شد ✅"
+            }
         }
 
         btnStopBle.setOnClickListener {
@@ -67,37 +62,60 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun ensureBleAdvertisePermissions(): Boolean {
+    private fun initAfterPerms() {
+        try {
+            ble = BLEPeripheralService()
+        } catch (t: Throwable) {
+            Toast.makeText(this, "Init error: ${t.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun checkAndRequestPerms(onGranted: () -> Unit) {
+        val needs = mutableListOf<String>()
+
+        if (Build.VERSION.SDK_INT >= 31) {
+            needs += listOf(
+                Manifest.permission.BLUETOOTH_SCAN,
+                Manifest.permission.BLUETOOTH_CONNECT,
+                Manifest.permission.BLUETOOTH_ADVERTISE
+            )
+        } else {
+            needs += Manifest.permission.ACCESS_FINE_LOCATION
+        }
+        needs += Manifest.permission.CAMERA
+
+        val toAsk = needs.filter {
+            ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
+        }
+
+        if (toAsk.isEmpty()) onGranted()
+        else ActivityCompat.requestPermissions(this, toAsk.toTypedArray(), 201)
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == 201 && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
+            initAfterPerms()
+        } else {
+            Toast.makeText(this, "اجازه‌ها لازم‌اند", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun ensureBleReady(): Boolean {
         val adapter = BluetoothAdapter.getDefaultAdapter()
         if (adapter == null) {
-            Toast.makeText(this, "بلوتوث در دستگاه وجود ندارد", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "بلوتوث در دسترس نیست", Toast.LENGTH_SHORT).show()
             return false
         }
-
-        val needed = mutableListOf<String>()
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_ADVERTISE)
-                != PackageManager.PERMISSION_GRANTED
-            ) needed += Manifest.permission.BLUETOOTH_ADVERTISE
-
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT)
-                != PackageManager.PERMISSION_GRANTED
-            ) needed += Manifest.permission.BLUETOOTH_CONNECT
-        } else {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED
-            ) needed += Manifest.permission.ACCESS_FINE_LOCATION
-        }
-
-        return if (needed.isNotEmpty()) {
-            ActivityCompat.requestPermissions(this, needed.toTypedArray(), 101)
-            false
-        } else true
+        return true
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        try { ble?.stopAdvertising() } catch (_: Throwable) {}
+        ble?.stopAdvertising()
     }
 }
