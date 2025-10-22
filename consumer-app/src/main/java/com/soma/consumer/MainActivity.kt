@@ -1,86 +1,143 @@
 package com.soma.consumer
 
 import android.Manifest
-import android.bluetooth.BluetoothAdapter
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.provider.Settings
 import android.widget.Button
+import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.core.content.PermissionChecker
-import com.soma.consumer.ble.BleClient
 import com.soma.consumer.qr.QRScanner
+import com.soma.consumer.ble.BleClient
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var bleClient: BleClient
     private lateinit var qrScanner: QRScanner
+    private var bleClient: BleClient? = null
 
-    private val blePerms =
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) arrayOf(
-            Manifest.permission.BLUETOOTH_SCAN,
-            Manifest.permission.BLUETOOTH_CONNECT
-        ) else emptyArray()
+    private lateinit var tvStatus: TextView
+    private lateinit var tvResult: TextView
+    private lateinit var btnScan: Button
+    private lateinit var btnStartBle: Button
+    private lateinit var btnStopBle: Button
 
-    private val reqPermsLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
-            val allGranted = result.values.all { it }
-            if (allGranted) startBleIfReady()
-            else Toast.makeText(this, "اجازه‌های بلوتوث داده نشد", Toast.LENGTH_SHORT).show()
-        }
+    companion object {
+        private const val REQ_CAMERA = 1001
+        private const val REQ_BLE = 1002
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        bleClient = BleClient(this) { device ->
-            Toast.makeText(this, "دستگاه پیدا شد: ${device.name ?: "نامشخص"}", Toast.LENGTH_SHORT).show()
+        // Views (ای‌دی‌ها باید با activity_main.xml یکی باشند)
+        tvStatus   = findViewById(R.id.tvStatus)
+        tvResult   = findViewById(R.id.tvResult)
+        btnScan    = findViewById(R.id.btnScan)
+        btnStartBle= findViewById(R.id.btnStartBle)
+        btnStopBle = findViewById(R.id.btnStopBle)
+
+        // QR
+        qrScanner = QRScanner(this) { contents ->
+            tvResult.text = contents
         }
-        qrScanner = QRScanner(this) { result ->
-            Toast.makeText(this, "نتیجه QR: $result", Toast.LENGTH_SHORT).show()
-        }
 
-        findViewById<Button>(R.id.btnStartScan).setOnClickListener { ensurePermsThenStart() }
-        findViewById<Button>(R.id.btnStopScan).setOnClickListener { bleClient.stopScan() }
-        findViewById<Button>(R.id.btnQR).setOnClickListener { qrScanner.startScan() }
-
-        ensurePermsThenStart()
-    }
-
-    private fun ensurePermsThenStart() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val need = blePerms.any {
-                ContextCompat.checkSelfPermission(this, it) != PermissionChecker.PERMISSION_GRANTED
-            }
-            if (need) {
-                reqPermsLauncher.launch(blePerms)
-                return
+        btnScan.setOnClickListener {
+            if (hasCameraPermission()) {
+                qrScanner.startScan()
+            } else {
+                ActivityCompat.requestPermissions(
+                    this, arrayOf(Manifest.permission.CAMERA), REQ_CAMERA
+                )
             }
         }
-        startBleIfReady()
+
+        // BLE
+        btnStartBle.setOnClickListener {
+            if (ensureBlePermissions()) {
+                startBle()
+            }
+        }
+
+        btnStopBle.setOnClickListener {
+            bleClient?.stop()
+            tvStatus.text = "BLE متوقف شد"
+        }
     }
 
-    private fun startBleIfReady() {
-        val adapter = BluetoothAdapter.getDefaultAdapter()
-        if (adapter == null) {
-            Toast.makeText(this, "این دستگاه بلوتوث ندارد", Toast.LENGTH_SHORT).show()
-            return
+    // ---------------- QR result forwarding ----------------
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        qrScanner.handleActivityResult(requestCode, resultCode, data)
+    }
+
+    // ---------------- Permissions helpers ----------------
+    private fun hasCameraPermission(): Boolean =
+        ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) ==
+                PackageManager.PERMISSION_GRANTED
+
+    private fun ensureBlePermissions(): Boolean {
+        if (Build.VERSION.SDK_INT >= 31) {
+            val needed = mutableListOf<String>()
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN)
+                != PackageManager.PERMISSION_GRANTED
+            ) needed += Manifest.permission.BLUETOOTH_SCAN
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT)
+                != PackageManager.PERMISSION_GRANTED
+            ) needed += Manifest.permission.BLUETOOTH_CONNECT
+            if (needed.isNotEmpty()) {
+                ActivityCompat.requestPermissions(this, needed.toTypedArray(), REQ_BLE)
+                return false
+            }
         }
-        if (!adapter.isEnabled) {
-            startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS))
-            Toast.makeText(this, "لطفاً بلوتوث را روشن کنید", Toast.LENGTH_SHORT).show()
-            return
+        return true
+    }
+
+    private fun startBle() {
+        try {
+            if (bleClient == null) {
+                // براساس امضاهای قبلی: سازنده فقط Context می‌گیرد
+                bleClient = BleClient(applicationContext)
+            }
+            tvStatus.text = "تلاش برای اتصال BLE…"
+            // با توجه به پیاده‌سازی شما، این دو متد معمولاً وجود دارند
+            bleClient?.start()
+            Toast.makeText(this, "BLE شروع شد", Toast.LENGTH_SHORT).show()
+        } catch (t: Throwable) {
+            tvStatus.text = "خطا در شروع BLE"
+            Toast.makeText(this, "BLE error: ${t.message}", Toast.LENGTH_SHORT).show()
         }
-        bleClient.startScan()
-        Toast.makeText(this, "در حال اسکن دستگاه‌ها...", Toast.LENGTH_SHORT).show()
+    }
+
+    // اگر کاربر بعد از درخواست مجوزها پاسخ دهد:
+    override fun onRequestPermissionsResult(
+        requestCode: Int, permissions: Array<out String>, grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        when (requestCode) {
+            REQ_CAMERA -> {
+                if (grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
+                    qrScanner.startScan()
+                } else {
+                    Toast.makeText(this, "مجوز دوربین لازم است", Toast.LENGTH_SHORT).show()
+                }
+            }
+            REQ_BLE -> {
+                if (grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
+                    startBle()
+                } else {
+                    Toast.makeText(this, "مجوزهای BLE لازم است", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        bleClient.stopScan()
+        bleClient?.stop()
     }
 }
