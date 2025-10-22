@@ -18,28 +18,30 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var bleClient: BleClient
     private lateinit var qrScanner: QrScanner
+    private lateinit var tvStatus: TextView
+    private lateinit var tvResult: TextView
+    private lateinit var btnQr: Button
+    private lateinit var btnStartScan: Button
+    private lateinit var btnStopScan: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        tvStatus = findViewById(R.id.tvStatus)
+        tvResult = findViewById(R.id.tvResult)
+        btnQr = findViewById(R.id.btnQr)
+        btnStartScan = findViewById(R.id.btnStartScan)
+        btnStopScan = findViewById(R.id.btnStopScan)
+
         bleClient = BleClient(this)
         qrScanner = QrScanner(this)
 
-        val btnStartBle: Button? = findViewById(R.id.btnStartBle)
-        val btnStopBle : Button? = findViewById(R.id.btnStopBle)
-        val btnScanQr  : Button? = findViewById(R.id.btnScanQr)
-        val tvStatus   : TextView? = findViewById(R.id.tvStatus)
-
-        if (btnStartBle == null) Toast.makeText(this, "btnStartBle در layout پیدا نشد", Toast.LENGTH_SHORT).show()
-        if (btnStopBle  == null) Toast.makeText(this, "btnStopBle در layout پیدا نشد", Toast.LENGTH_SHORT).show()
-        if (btnScanQr   == null) Toast.makeText(this, "btnScanQr در layout پیدا نشد", Toast.LENGTH_SHORT).show()
-        if (tvStatus    == null) Toast.makeText(this, "tvStatus در layout پیدا نشد", Toast.LENGTH_SHORT).show()
-
-        btnScanQr?.setOnClickListener {
+        btnQr.setOnClickListener {
             qrScanner.startScan(
                 onResult = { code ->
-                    tvStatus?.text = "QR: $code"
+                    tvResult.text = "کد: $code"
+                    tvStatus.text = "QR دریافت شد ✅"
                 },
                 onCancel = {
                     Toast.makeText(this, "اسکن لغو شد", Toast.LENGTH_SHORT).show()
@@ -47,38 +49,38 @@ class MainActivity : AppCompatActivity() {
             )
         }
 
-        btnStartBle?.setOnClickListener {
+        btnStartScan.setOnClickListener {
             if (ensureBleScanPermissions()) {
-                tvStatus?.text = "وضعیت: در حال اسکن BLE"
+                tvStatus.text = "در حال اسکن BLE ..."
                 bleClient.startScan(
-                    onFound = { deviceName ->
-                        tvStatus?.text = "پیدا شد: $deviceName"
+                    onFound = { device ->
+                        tvStatus.text = "یافت شد: $device"
                     },
                     onStop = {
-                        tvStatus?.text = "اسکن متوقف شد"
+                        tvStatus.text = "اسکن متوقف شد"
                     }
                 )
             }
         }
 
-        btnStopBle?.setOnClickListener {
+        btnStopScan.setOnClickListener {
             bleClient.stopScan()
-            tvStatus?.text = "اسکن متوقف شد"
+            tvStatus.text = "اسکن متوقف شد"
         }
     }
 
     private fun ensureBleScanPermissions(): Boolean {
         val adapter = BluetoothAdapter.getDefaultAdapter()
         if (adapter == null) {
-            Toast.makeText(this, "این دستگاه بلوتوث ندارد", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "بلوتوث در دسترس نیست", Toast.LENGTH_SHORT).show()
             return false
         }
+
         val needed = mutableListOf<String>()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN)
                 != PackageManager.PERMISSION_GRANTED
             ) needed += Manifest.permission.BLUETOOTH_SCAN
-
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT)
                 != PackageManager.PERMISSION_GRANTED
             ) needed += Manifest.permission.BLUETOOTH_CONNECT
@@ -89,7 +91,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         return if (needed.isNotEmpty()) {
-            ActivityCompat.requestPermissions(this, needed.toTypedArray(), 20)
+            ActivityCompat.requestPermissions(this, needed.toTypedArray(), 200)
             false
         } else true
     }
