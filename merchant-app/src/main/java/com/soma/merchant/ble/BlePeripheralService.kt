@@ -1,20 +1,10 @@
 package com.soma.merchant.ble
 
 import android.app.Service
-import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothGatt
-import android.bluetooth.BluetoothGattCharacteristic
-import android.bluetooth.BluetoothGattDescriptor
-import android.bluetooth.BluetoothGattServer
-import android.bluetooth.BluetoothGattServerCallback
-import android.bluetooth.BluetoothGattService
-import android.bluetooth.BluetoothManager
-import android.bluetooth.le.AdvertiseCallback
-import android.bluetooth.le.AdvertiseData
-import android.bluetooth.le.AdvertiseSettings
+import android.bluetooth.*
+import android.bluetooth.le.*
 import android.content.Intent
 import android.os.Binder
-import android.os.Build
 import android.os.IBinder
 import android.os.ParcelUuid
 import android.util.Log
@@ -23,7 +13,6 @@ import java.util.UUID
 class BlePeripheralService : Service() {
 
     companion object {
-        // باید با CLIENT یکی باشد
         val SERVICE_UUID: UUID = UUID.fromString("0000180F-0000-1000-8000-00805F9B34FB")
         val CHAR_TX_UUID: UUID = UUID.fromString("00002A19-0000-1000-8000-00805F9B34FB")
         private const val TAG = "BlePeripheral"
@@ -66,7 +55,6 @@ class BlePeripheralService : Service() {
             BluetoothGattCharacteristic.PROPERTY_READ or BluetoothGattCharacteristic.PROPERTY_NOTIFY,
             BluetoothGattCharacteristic.PERMISSION_READ
         )
-        // یک Descriptor برای نوتیفای
         val cccd = BluetoothGattDescriptor(
             UUID.fromString("00002902-0000-1000-8000-00805f9b34fb"),
             BluetoothGattDescriptor.PERMISSION_READ or BluetoothGattDescriptor.PERMISSION_WRITE
@@ -93,7 +81,7 @@ class BlePeripheralService : Service() {
 
         val data = AdvertiseData.Builder()
             .setIncludeDeviceName(true)
-            .addServiceUuid(ParcelUuid.fromString(SERVICE_UUID.toString()))
+            .addServiceUuid(ParcelUuid(SERVICE_UUID))   // <-- این خط
             .build()
 
         advertiser.startAdvertising(settings, data, advertiseCallback)
@@ -122,13 +110,8 @@ class BlePeripheralService : Service() {
     }
 
     private val gattCallback = object : BluetoothGattServerCallback() {
-
-        override fun onConnectionStateChange(device: android.bluetooth.BluetoothDevice?, status: Int, newState: Int) {
-            Log.d(TAG, "onConnectionStateChange: $newState status=$status")
-        }
-
         override fun onCharacteristicReadRequest(
-            device: android.bluetooth.BluetoothDevice?,
+            device: BluetoothDevice?,
             requestId: Int,
             offset: Int,
             characteristic: BluetoothGattCharacteristic?
@@ -138,21 +121,6 @@ class BlePeripheralService : Service() {
                 gattServer?.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, payload)
             } else {
                 gattServer?.sendResponse(device, requestId, BluetoothGatt.GATT_FAILURE, 0, null)
-            }
-        }
-
-        override fun onDescriptorWriteRequest(
-            device: android.bluetooth.BluetoothDevice?,
-            requestId: Int,
-            descriptor: BluetoothGattDescriptor?,
-            preparedWrite: Boolean,
-            responseNeeded: Boolean,
-            offset: Int,
-            value: ByteArray?
-        ) {
-            // اجازه فعال‌سازی نوتیفای
-            if (responseNeeded) {
-                gattServer?.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, value)
             }
         }
     }
