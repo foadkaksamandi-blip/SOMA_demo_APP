@@ -15,8 +15,14 @@ android {
         versionName = "1.0"
     }
 
-    buildFeatures {
-        viewBinding = true
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
     }
 
     compileOptions {
@@ -30,7 +36,17 @@ android {
 }
 
 dependencies {
-    implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("androidx.core:core-ktx:1.13.1")
+    implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("com.google.android.material:material:1.12.0")
+    implementation("androidx.constraintlayout:constraintlayout:2.2.0")
+
+    // ZXing QR Code Scanner
+    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
+
+    // BLE
+    implementation("no.nordicsemi.android:ble:2.6.1")
+
+    // Kotlin coroutines (درصورت نیاز برای BLE)
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
 }
