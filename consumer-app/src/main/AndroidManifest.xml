@@ -2,37 +2,32 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.soma.consumer">
 
-    <!-- Permissions for QR and BLE -->
+    <!-- Permissions -->
     <uses-permission android:name="android.permission.CAMERA" />
-    <!-- Android 12+ BLE permissions -->
+
+    <!-- BLE (قدیمی) -->
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+
+    <!-- BLE (Android 12+) -->
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
-    <!-- (اختیاری) لوکیشن اگر اسکن کلاسیک نیاز باشد -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
     <application
-        android:name=".App"
+        android:label="SOMA Consumer Demo"
         android:allowBackup="true"
-        android:label="SOMA Consumer"
-        android:icon="@mipmap/ic_launcher"
-        android:roundIcon="@mipmap/ic_launcher_round"
-        android:theme="@style/Theme.Material3.DayNight.NoActionBar">
+        android:supportsRtl="true"
+        android:theme="@style/Theme.AppCompat.Light.NoActionBar">
 
         <activity
             android:name=".MainActivity"
-            android:exported="true">
+            android:exported="true">  <!-- مهم -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
-        <!-- اگر سرویس BLE کلاینت دارید و فورگراند می‌شود، اینجا تعریفش کنید (اختیاری)
-        <service
-            android:name=".ble.BleForegroundService"
-            android:enabled="true"
-            android:exported="false"
-            android:foregroundServiceType="connectedDevice" />
-        -->
     </application>
 </manifest>
