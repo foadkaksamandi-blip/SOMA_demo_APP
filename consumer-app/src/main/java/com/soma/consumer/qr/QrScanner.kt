@@ -1,39 +1,24 @@
 package com.soma.consumer.qr
 
-import android.app.Activity
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts
-import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
 
-class QRScanner(private val activity: Activity) {
-
-    private var launcher: ActivityResultLauncher<ScanOptions>? = null
-
-    fun register(
-        onResult: (String) -> Unit,
-        onCancel: () -> Unit = {}
-    ) {
-        launcher = activity.registerForActivityResult(ScanContract()) { result ->
-            if (result != null && !result.contents.isNullOrEmpty()) {
-                onResult(result.contents!!)
-            } else {
-                onCancel()
-            }
-        }
-    }
-
-    fun startScan(
-        prompt: String = "لطفاً QR را اسکن کنید…",
-        beep: Boolean = false
-    ) {
-        val opts = ScanOptions().apply {
-            setDesiredBarcodeFormats(ScanOptions.QR_CODE)
-            setPrompt(prompt)
-            setBeepEnabled(beep)
-            setOrientationLocked(true)
-        }
-        launcher?.launch(opts)
-            ?: throw IllegalStateException("QRScanner.register() باید قبل از startScan صدا زده شود.")
+/**
+ * فقط تنظیمات اسکن QR را می‌سازد.
+ * لانچر (registerForActivityResult) باید داخل Activity ساخته شود.
+ */
+class QrScanner {
+    fun options(): ScanOptions {
+        val opts = ScanOptions()
+        // فقط QR
+        opts.setDesiredBarcodeFormats(ScanOptions.QR_CODE)
+        // متن راهنما
+        opts.setPrompt("کد QR را اسکن کنید")
+        // بیپ
+        opts.setBeepEnabled(true)
+        // قفل جهت‌نمایی
+        opts.setOrientationLocked(true)
+        // دوربین پشت
+        // opts.setCameraId(0) // در صورت نیاز فعال کن
+        return opts
     }
 }
