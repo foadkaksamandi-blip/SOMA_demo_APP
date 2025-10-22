@@ -1,24 +1,32 @@
 package com.soma.consumer.qr
 
+import androidx.appcompat.app.AppCompatActivity
+import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
 
-/**
- * فقط تنظیمات اسکن QR را می‌سازد.
- * لانچر (registerForActivityResult) باید داخل Activity ساخته شود.
- */
-class QrScanner {
-    fun options(): ScanOptions {
+class QrScanner(private val activity: AppCompatActivity) {
+
+    private var onResult: ((String) -> Unit)? = null
+    private var onCancel: (() -> Unit)? = null
+
+    private val launcher = activity.registerForActivityResult(ScanContract()) { result ->
+        if (result.contents != null) {
+            onResult?.invoke(result.contents!!)
+        } else {
+            onCancel?.invoke()
+        }
+    }
+
+    fun startScan(onResult: (String) -> Unit, onCancel: () -> Unit) {
+        this.onResult = onResult
+        this.onCancel = onCancel
+
         val opts = ScanOptions()
-        // فقط QR
-        opts.setDesiredBarcodeFormats(ScanOptions.QR_CODE)
-        // متن راهنما
-        opts.setPrompt("کد QR را اسکن کنید")
-        // بیپ
-        opts.setBeepEnabled(true)
-        // قفل جهت‌نمایی
-        opts.setOrientationLocked(true)
-        // دوربین پشت
-        // opts.setCameraId(0) // در صورت نیاز فعال کن
-        return opts
+            .setDesiredBarcodeFormats(ScanOptions.QR_CODE)
+            .setBeepEnabled(true)
+            .setPrompt("لطفاً QR را در کادر قرار دهید")
+            .setOrientationLocked(true)
+
+        launcher.launch(opts)
     }
 }
