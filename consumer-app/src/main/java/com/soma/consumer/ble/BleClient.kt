@@ -1,45 +1,41 @@
 package com.soma.consumer.ble
 
-import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothManager
+import android.bluetooth.le.ScanCallback
+import android.bluetooth.le.ScanResult
 import android.content.Context
-import android.os.Handler
-import android.os.Looper
+import android.util.Log
 
-class BleClient(
-    private val context: Context,
-    private val onDeviceFound: (BluetoothDevice) -> Unit
-) {
-
-    private var adapter: BluetoothAdapter? = null
+class BleClient(private val context: Context) {
+    private val bluetoothAdapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
     private var scanning = false
-    private val handler = Handler(Looper.getMainLooper())
 
-    private val scanCallback = @SuppressLint("MissingPermission")
-    object : android.bluetooth.le.ScanCallback() {
-        override fun onScanResult(callbackType: Int, result: android.bluetooth.le.ScanResult) {
-            result.device?.let { onDeviceFound(it) }
+    fun startScan(onFound: (String) -> Unit, onStop: () -> Unit) {
+        if (bluetoothAdapter == null) {
+            Log.e("BLE", "Bluetooth not supported")
+            return
         }
-    }
 
-    init {
-        val manager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-        adapter = manager.adapter
-    }
-
-    @SuppressLint("MissingPermission")
-    fun startScan() {
-        if (scanning) return
-        adapter?.bluetoothLeScanner?.startScan(scanCallback)
+        val scanner = bluetoothAdapter.bluetoothLeScanner ?: return
         scanning = true
+        scanner.startScan(callback(onFound))
+        Log.d("BLE", "Scanning started")
     }
 
-    @SuppressLint("MissingPermission")
     fun stopScan() {
-        if (!scanning) return
-        adapter?.bluetoothLeScanner?.stopScan(scanCallback)
+        if (bluetoothAdapter == null) return
+        bluetoothAdapter.bluetoothLeScanner?.stopScan(callback { })
         scanning = false
+        Log.d("BLE", "Scanning stopped")
+    }
+
+    private fun callback(onFound: (String) -> Unit): ScanCallback {
+        return object : ScanCallback() {
+            override fun onScanResult(callbackType: Int, result: ScanResult?) {
+                val device: BluetoothDevice? = result?.device
+                device?.name?.let { onFound(it) }
+            }
+        }
     }
 }
