@@ -1,120 +1,192 @@
-package com.soma.consumer
+package com.soma.consumer.ble
 
-import android.Manifest
-import android.bluetooth.BluetoothAdapter
-import android.content.pm.PackageManager
-import android.os.Build
-import android.os.Bundle
-import android.widget.*
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
-import com.soma.consumer.ble.BLEClient
-import com.soma.consumer.qr.QrScanner
+import android.annotation.SuppressLint
+import android.bluetooth.*
+import android.content.Context
+import android.os.Handler
+import android.os.Looper
+import android.os.ParcelUuid
+import android.util.Log
+import java.util.UUID
 
-class MainActivity : AppCompatActivity() {
+/**
+ * اسکن BLE برای یک Service مشخص، اتصال، و خواندن یک Characteristic متنی
+ *
+ * API سطح استفاده شده: BluetoothAdapter/BluetoothLeScanner/BluetoothGatt
+ * امضاها مطابق MainActivity:
+ *  - startScan(onFound: (String) -> Unit, onStop: () -> Unit)
+ *  - stopScan()
+ */
+class BLEClient(private val context: Context) {
 
-    // Viewها
-    private lateinit var tvStatus: TextView
-    private lateinit var tvResult: TextView
-    private lateinit var btnQr: Button
-    private lateinit var btnStartScan: Button
-    private lateinit var btnStopScan: Button
+    companion object {
+        // این‌ها را در صورت نیاز با UUIDهای واقعی عوض کن
+        val SERVICE_UUID: UUID = UUID.fromString("0000feed-0000-1000-8000-00805f9b34fb")
+        val CHAR_TX_UUID: UUID = UUID.fromString("0000beef-0000-1000-8000-00805f9b34fb")
 
-    // سرویس‌ها
-    private lateinit var bleClient: BLEClient
-    private lateinit var qrScanner: QrScanner
+        private const val TAG = "BLEClient"
+        private const val TIMEOUT_MS = 15_000L
+    }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+    private val btMgr: BluetoothManager =
+        context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+    private val adapter: BluetoothAdapter? get() = btMgr.adapter
+    private var scanner: BluetoothLeScanner? = null
+    private var scanCallback: ScanCallback? = null
 
-        tvStatus = findViewById(R.id.tvStatus)
-        tvResult = findViewById(R.id.tvResult)
-        btnQr = findViewById(R.id.btnQr)
-        btnStartScan = findViewById(R.id.btnStartScan)
-        btnStopScan = findViewById(R.id.btnStopScan)
+    private var gatt: BluetoothGatt? = null
 
-        checkAndRequestPerms {
-            initAfterPerms()
+    private val main = Handler(Looper.getMainLooper())
+    private var timeoutPosted = false
+
+    private var onFoundCb: ((String) -> Unit)? = null
+    private var onStopCb: (() -> Unit)? = null
+
+    // ----------------- Public API -----------------
+
+    @SuppressLint("MissingPermission")
+    fun startScan(onFound: (String) -> Unit, onStop: () -> Unit) {
+        onFoundCb = onFound
+        onStopCb = onStop
+
+        val ad = adapter ?: run {
+            onFoundCb?.invoke("Bluetooth adapter not available")
+            onStopInternal()
+            return
+        }
+        if (!ad.isEnabled) {
+            onFoundCb?.invoke("Bluetooth is disabled")
+            onStopInternal()
+            return
         }
 
-        btnQr.setOnClickListener {
-            qrScanner.startScan(
-                onResult = { code ->
-                    tvResult.text = "کد: $code"
-                    tvStatus.text = "QR دریافت شد ✅"
-                },
-                onCancel = {
-                    Toast.makeText(this, "اسکن لغو شد", Toast.LENGTH_SHORT).show()
-                }
-            )
+        scanner = ad.bluetoothLeScanner ?: run {
+            onFoundCb?.invoke("BLE scanner not available")
+            onStopInternal()
+            return
         }
 
-        btnStartScan.setOnClickListener {
-            if (ensureBleReady()) {
-                tvStatus.text = "در حال اسکن BLE ..."
-                bleClient.startScan(
-                    onFound = { device ->
-                        tvStatus.text = "پیدا شد: $device"
-                    },
-                    onStop = {
-                        tvStatus.text = "اسکن متوقف شد"
-                    }
-                )
+        // فیلتر روی سرویس مورد نظر
+        val filters = listOf(
+            ScanFilter.Builder().setServiceUuid(ParcelUuid(SERVICE_UUID)).build()
+        )
+        val settings = ScanSettings.Builder()
+            .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+            .build()
+
+        scanCallback = object : ScanCallback() {
+            override fun onScanResult(callbackType: Int, result: ScanResult) {
+                val dev = result.device
+                val name = dev.name ?: "بدون‌نام"
+                val addr = dev.address ?: "?"
+                onFoundCb?.invoke("دستگاه: $name | $addr")
+                // به محض اولین نتیجه متصل شو
+                stopOnlyScan()
+                connect(dev)
+            }
+
+            override fun onScanFailed(errorCode: Int) {
+                onFoundCb?.invoke("Scan failed: $errorCode")
+                onStopInternal()
             }
         }
 
-        btnStopScan.setOnClickListener {
-            bleClient.stopScan { tvStatus.text = "اسکن متوقف شد" }
+        scanner?.startScan(filters, settings, scanCallback)
+        onFoundCb?.invoke("اسکن شروع شد...")
+
+        if (!timeoutPosted) {
+            timeoutPosted = true
+            main.postDelayed({
+                timeoutPosted = false
+                onFoundCb?.invoke("اسکن به زمان‌بندی رسید")
+                onStopInternal()
+            }, TIMEOUT_MS)
         }
     }
 
-    private fun initAfterPerms() {
-        bleClient = BLEClient(this)
-        qrScanner = QrScanner(this)
+    @SuppressLint("MissingPermission")
+    fun stopScan() {
+        onFoundCb?.invoke("اسکن متوقف شد")
+        onStopInternal()
     }
 
-    private fun checkAndRequestPerms(onGranted: () -> Unit) {
-        val needs = mutableListOf<String>()
+    // ----------------- Internals -----------------
 
-        if (Build.VERSION.SDK_INT >= 31) {
-            needs += listOf(
-                Manifest.permission.BLUETOOTH_SCAN,
-                Manifest.permission.BLUETOOTH_CONNECT
-            )
-        } else {
-            needs += Manifest.permission.ACCESS_FINE_LOCATION
+    @SuppressLint("MissingPermission")
+    private fun stopOnlyScan() {
+        try {
+            scanner?.stopScan(scanCallback)
+        } catch (_: Throwable) {
         }
-        needs += Manifest.permission.CAMERA
-
-        val toAsk = needs.filter {
-            ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
-        }
-
-        if (toAsk.isEmpty()) onGranted()
-        else ActivityCompat.requestPermissions(this, toAsk.toTypedArray(), 101)
+        scanCallback = null
+        scanner = null
     }
 
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == 101 && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
-            initAfterPerms()
-        } else {
-            Toast.makeText(this, "اجازه‌ها لازم‌اند", Toast.LENGTH_LONG).show()
+    @SuppressLint("MissingPermission")
+    private fun onStopInternal() {
+        stopOnlyScan()
+        closeGatt()
+        onStopCb?.invoke()
+        onStopCb = null
+        onFoundCb = null
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun connect(device: BluetoothDevice) {
+        onFoundCb?.invoke("اتصال به فروشنده ...")
+        gatt = device.connectGatt(context, false, gattCallback)
+    }
+
+    @SuppressLint("MissingPermission")
+    private val gattCallback = object : BluetoothGattCallback() {
+        override fun onConnectionStateChange(g: BluetoothGatt, status: Int, newState: Int) {
+            if (newState == BluetoothProfile.STATE_CONNECTED) {
+                onFoundCb?.invoke("به دستگاه متصل شد ✅")
+                g.discoverServices()
+            } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                onFoundCb?.invoke("ارتباط قطع شد")
+                closeGatt()
+                onStopCb?.invoke()
+            }
+        }
+
+        override fun onServicesDiscovered(g: BluetoothGatt, status: Int) {
+            val svc = g.getService(SERVICE_UUID)
+            if (svc == null) {
+                onFoundCb?.invoke("Service یافت نشد")
+                g.disconnect()
+                return
+            }
+            val tx = svc.getCharacteristic(CHAR_TX_UUID)
+            if (tx == null) {
+                onFoundCb?.invoke("Characteristic یافت نشد")
+                g.disconnect()
+                return
+            }
+            // یک‌بار بخوان
+            val ok = g.readCharacteristic(tx)
+            if (!ok) {
+                onFoundCb?.invoke("خطا در readCharacteristic")
+                g.disconnect()
+            }
+        }
+
+        override fun onCharacteristicRead(
+            g: BluetoothGatt,
+            characteristic: BluetoothGattCharacteristic,
+            status: Int
+        ) {
+            if (characteristic.uuid == CHAR_TX_UUID) {
+                val bytes = characteristic.value ?: ByteArray(0)
+                val msg = try { String(bytes) } catch (_: Throwable) { "[bytes:${bytes.size}]" }
+                onFoundCb?.invoke("پیام دریافت‌شده: $msg")
+                g.disconnect()
+            }
         }
     }
 
-    private fun ensureBleReady(): Boolean {
-        val adapter = BluetoothAdapter.getDefaultAdapter()
-        if (adapter == null) {
-            Toast.makeText(this, "بلوتوث در دسترس نیست", Toast.LENGTH_SHORT).show()
-            return false
-        }
-        return true
+    private fun closeGatt() {
+        try { gatt?.close() } catch (_: Throwable) {}
+        gatt = null
     }
 }
