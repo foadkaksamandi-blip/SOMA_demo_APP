@@ -1,127 +1,255 @@
-package com.soma.merchant.ble
+package com.soma.merchant
 
+import android.Manifest
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.app.Service
 import android.bluetooth.*
-import android.bluetooth.le.*
+import android.bluetooth.le.AdvertiseCallback
+import android.bluetooth.le.AdvertiseData
+import android.bluetooth.le.AdvertiseSettings
+import android.bluetooth.le.BluetoothLeAdvertiser
+import android.content.Context
 import android.content.Intent
-import android.os.Binder
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.IBinder
 import android.os.ParcelUuid
-import android.util.Log
+import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import java.nio.charset.Charset
 import java.util.UUID
 
+/**
+ * Foreground service for BLE Peripheral demo.
+ * - Starts/stops LE advertising via Intent actions:
+ *   * ACTION_START_ADVERTISING
+ *   * ACTION_STOP_ADVERTISING
+ * - Opens a simple GATT server with one service/characteristic
+ * - Broadcasts human-readable status messages to MainActivity via LocalBroadcast
+ */
 class BlePeripheralService : Service() {
 
-    companion object {
-        val SERVICE_UUID: UUID = UUID.fromString("0000180F-0000-1000-8000-00805F9B34FB")
-        val CHAR_TX_UUID: UUID = UUID.fromString("00002A19-0000-1000-8000-00805F9B34FB")
-        private const val TAG = "BlePeripheral"
-    }
+    private var advertiser: BluetoothLeAdvertiser? = null
+    private var advertiseCallback: AdvertiseCallback? = null
 
-    private val binder = LocalBinder()
     private var gattServer: BluetoothGattServer? = null
-    private var isAdvertising = false
 
-    inner class LocalBinder : Binder() {
-        fun service(): BlePeripheralService = this@BlePeripheralService
-    }
+    // UUIDs (نمونه)
+    private val SERVICE_UUID: UUID =
+        UUID.fromString("0000180F-0000-1000-8000-00805F9B34FB") // Battery Service as demo
+    private val CHAR_UUID: UUID =
+        UUID.fromString("00002A19-0000-1000-8000-00805F9B34FB") // Battery Level
 
-    override fun onBind(intent: Intent?): IBinder = binder
+    override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onCreate() {
         super.onCreate()
+        startInForeground()
         setupGattServer()
     }
 
     override fun onDestroy() {
-        stopAdvertising()
-        gattServer?.close()
+        stopAdvertisingInternal()
+        closeGatt()
         super.onDestroy()
     }
 
-    private fun bluetoothAdapter(): BluetoothAdapter? {
-        val manager = getSystemService(BLUETOOTH_SERVICE) as? BluetoothManager
-        return manager?.adapter
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        when (intent?.action) {
+            MainActivity.ACTION_START_ADVERTISING -> startAdvertising()
+            MainActivity.ACTION_STOP_ADVERTISING -> {
+                stopAdvertisingInternal()
+                sendStatus("انتشار BLE متوقف شد")
+                stopSelf()
+            }
+            else -> { /* no-op */ }
+        }
+        return START_STICKY
     }
 
+    // -------------------- Foreground --------------------
+
+    private fun startInForeground() {
+        val channelId = "ble_peripheral_demo"
+        val channelName = "BLE Peripheral"
+        val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            if (nm.getNotificationChannel(channelId) == null) {
+                nm.createNotificationChannel(
+                    NotificationChannel(
+                        channelId,
+                        channelName,
+                        NotificationManager.IMPORTANCE_LOW
+                    ).apply { setShowBadge(false) }
+                )
+            }
+        }
+        val notif: Notification = NotificationCompat.Builder(this, channelId)
+            .setContentTitle("SOMA Merchant")
+            .setContentText("سرویس BLE در حال اجرا")
+            .setSmallIcon(android.R.drawable.stat_sys_data_bluetooth)
+            .setOngoing(true)
+            .build()
+        // برای API 29- باید foreground باشد تا تبلیغ مجاز شود
+        startForeground(1001, notif)
+    }
+
+    // -------------------- GATT Server --------------------
+
     private fun setupGattServer() {
-        val manager = getSystemService(BLUETOOTH_SERVICE) as? BluetoothManager
-        gattServer = manager?.openGattServer(this, gattCallback)
+        val bm = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+        gattServer = bm.openGattServer(this, object : BluetoothGattServerCallback() {
+            override fun onConnectionStateChange(device: BluetoothDevice?, status: Int, newState: Int) {
+                super.onConnectionStateChange(device, status, newState)
+                val s = when (newState) {
+                    BluetoothProfile.STATE_CONNECTED -> "دستگاه متصل شد"
+                    BluetoothProfile.STATE_DISCONNECTED -> "دستگاه قطع شد"
+                    else -> "تغییر وضعیت: $newState"
+                }
+                sendStatus(s)
+            }
 
-        val service = BluetoothGattService(SERVICE_UUID, BluetoothGattService.SERVICE_TYPE_PRIMARY)
+            override fun onCharacteristicReadRequest(
+                device: BluetoothDevice?,
+                requestId: Int,
+                offset: Int,
+                characteristic: BluetoothGattCharacteristic?
+            ) {
+                super.onCharacteristicReadRequest(device, requestId, offset, characteristic)
+                // مقدار نمایشی باتری (دمو)
+                val value = byteArrayOf(85) // 85%
+                gattServer?.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, value)
+            }
+        })
 
-        val txChar = BluetoothGattCharacteristic(
-            CHAR_TX_UUID,
-            BluetoothGattCharacteristic.PROPERTY_READ or BluetoothGattCharacteristic.PROPERTY_NOTIFY,
+        // add service + characteristic
+        val service = BluetoothGattService(
+            SERVICE_UUID,
+            BluetoothGattService.SERVICE_TYPE_PRIMARY
+        )
+        val characteristic = BluetoothGattCharacteristic(
+            CHAR_UUID,
+            BluetoothGattCharacteristic.PROPERTY_READ,
             BluetoothGattCharacteristic.PERMISSION_READ
         )
-        val cccd = BluetoothGattDescriptor(
-            UUID.fromString("00002902-0000-1000-8000-00805f9b34fb"),
-            BluetoothGattDescriptor.PERMISSION_READ or BluetoothGattDescriptor.PERMISSION_WRITE
-        )
-        txChar.addDescriptor(cccd)
-        service.addCharacteristic(txChar)
-
+        service.addCharacteristic(characteristic)
         gattServer?.addService(service)
     }
 
-    fun startAdvertising(): Boolean {
-        if (isAdvertising) return true
-        val adapter = bluetoothAdapter() ?: return false
-        if (!adapter.isEnabled) return false
+    private fun closeGatt() {
+        try {
+            gattServer?.close()
+        } catch (_: Exception) {
+        }
+        gattServer = null
+    }
 
-        val advertiser = adapter.bluetoothLeAdvertiser ?: return false
+    // -------------------- Advertising --------------------
+
+    private fun startAdvertising() {
+        // مجوزها را دوباره چک می‌کنیم
+        if (!hasAdvertisePermission()) {
+            sendStatus("مجوزهای بلوتوث/مکان فراهم نیست")
+            return
+        }
+
+        val bm = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+        val adapter = bm.adapter
+        if (adapter == null || !adapter.isEnabled) {
+            sendStatus("بلوتوث فعال نیست")
+            return
+        }
+
+        advertiser = adapter.bluetoothLeAdvertiser
+        if (advertiser == null) {
+            sendStatus("این دستگاه از BLE Peripheral پشتیبانی نمی‌کند")
+            return
+        }
+
+        if (advertiseCallback != null) {
+            sendStatus("در حال انتشار است…")
+            return
+        }
 
         val settings = AdvertiseSettings.Builder()
             .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY)
-            .setConnectable(true)
-            .setTimeout(0)
             .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_HIGH)
+            .setConnectable(true)
             .build()
 
+        // دادهٔ تبلیغ: نام و UUID سرویس
         val data = AdvertiseData.Builder()
             .setIncludeDeviceName(true)
-            .addServiceUuid(ParcelUuid(SERVICE_UUID))   // <-- این خط
+            .addServiceUuid(ParcelUuid(SERVICE_UUID))
             .build()
 
-        advertiser.startAdvertising(settings, data, advertiseCallback)
-        isAdvertising = true
-        Log.d(TAG, "startAdvertising()")
-        return true
-    }
+        val scanResponse = AdvertiseData.Builder()
+            .addServiceData(
+                ParcelUuid(SERVICE_UUID),
+                "SOMA".toByteArray(Charset.defaultCharset())
+            )
+            .build()
 
-    fun stopAdvertising() {
-        if (!isAdvertising) return
-        val advertiser = bluetoothAdapter()?.bluetoothLeAdvertiser ?: return
-        advertiser.stopAdvertising(advertiseCallback)
-        isAdvertising = false
-        Log.d(TAG, "stopAdvertising()")
-    }
+        advertiseCallback = object : AdvertiseCallback() {
+            override fun onStartSuccess(settingsInEffect: AdvertiseSettings?) {
+                super.onStartSuccess(settingsInEffect)
+                sendStatus("انتشار BLE شروع شد")
+            }
 
-    private val advertiseCallback = object : AdvertiseCallback() {
-        override fun onStartSuccess(settingsInEffect: AdvertiseSettings?) {
-            Log.d(TAG, "Advertise success")
-        }
-
-        override fun onStartFailure(errorCode: Int) {
-            Log.e(TAG, "Advertise failed: $errorCode")
-            isAdvertising = false
-        }
-    }
-
-    private val gattCallback = object : BluetoothGattServerCallback() {
-        override fun onCharacteristicReadRequest(
-            device: BluetoothDevice?,
-            requestId: Int,
-            offset: Int,
-            characteristic: BluetoothGattCharacteristic?
-        ) {
-            if (characteristic?.uuid == CHAR_TX_UUID) {
-                val payload = "HELLO_FROM_MERCHANT".toByteArray()
-                gattServer?.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, payload)
-            } else {
-                gattServer?.sendResponse(device, requestId, BluetoothGatt.GATT_FAILURE, 0, null)
+            override fun onStartFailure(errorCode: Int) {
+                super.onStartFailure(errorCode)
+                advertiseCallback = null
+                val msg = when (errorCode) {
+                    ADVERTISE_FAILED_ALREADY_STARTED -> "قبلاً شروع شده بود"
+                    ADVERTISE_FAILED_DATA_TOO_LARGE -> "دادهٔ تبلیغ بزرگ است"
+                    ADVERTISE_FAILED_FEATURE_UNSUPPORTED -> "ویژگی پشتیبانی نمی‌شود"
+                    ADVERTISE_FAILED_INTERNAL_ERROR -> "خطای داخلی"
+                    ADVERTISE_FAILED_TOO_MANY_ADVERTISERS -> "تبلیغ‌کننده زیاد است"
+                    else -> "خطای ناشناخته: $errorCode"
+                }
+                sendStatus("خطا در شروع انتشار: $msg")
             }
         }
+
+        advertiser?.startAdvertising(settings, data, scanResponse, advertiseCallback)
+        sendStatus("در حال تلاش برای انتشار…")
+    }
+
+    private fun stopAdvertisingInternal() {
+        try {
+            advertiser?.stopAdvertising(advertiseCallback)
+        } catch (_: Exception) {
+        }
+        advertiseCallback = null
+    }
+
+    // -------------------- Utils --------------------
+
+    private fun hasAdvertisePermission(): Boolean {
+        return if (Build.VERSION.SDK_INT >= 31) {
+            ContextCompat.checkSelfPermission(
+                this, Manifest.permission.BLUETOOTH_ADVERTISE
+            ) == PackageManager.PERMISSION_GRANTED &&
+            ContextCompat.checkSelfPermission(
+                this, Manifest.permission.BLUETOOTH_CONNECT
+            ) == PackageManager.PERMISSION_GRANTED &&
+            ContextCompat.checkSelfPermission(
+                this, Manifest.permission.BLUETOOTH_SCAN
+            ) == PackageManager.PERMISSION_GRANTED
+        } else {
+            // در نسخه‌های قدیمی‌تر معمولاً FINE_LOCATION لازم است
+            ContextCompat.checkSelfPermission(
+                this, Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        }
+    }
+
+    private fun sendStatus(text: String) {
+        val i = Intent(MainActivity.ACTION_BLE_STATUS)
+            .putExtra(MainActivity.EXTRA_STATUS_TEXT, text)
+        LocalBroadcastManager.getInstance(this).sendBroadcast(i)
     }
 }
