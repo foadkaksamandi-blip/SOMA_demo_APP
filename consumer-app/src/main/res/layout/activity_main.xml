@@ -1,53 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
     android:padding="16dp"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
     <TextView
-        android:id="@+id/tvTitle"
-        android:text="SOMA Consumer Demo"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
-
-    <TextView
         android:id="@+id/tvStatus"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:text="وضعیت: آماده"
-        android:layout_marginTop="12dp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+        android:textSize="18sp"
+        android:paddingBottom="12dp"/>
 
-    <com.google.android.material.button.MaterialButton
+    <Button
         android:id="@+id/btnQr"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="اسکن QR"
-        style="?attr/materialButtonOutlinedStyle"
-        android:layout_marginTop="24dp" />
+        android:layout_height="48dp"
+        android:text="اسکن QR" />
 
-    <com.google.android.material.button.MaterialButton
+    <Button
         android:id="@+id/btnStart"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="48dp"
         android:text="شروع BLE"
-        android:layout_marginTop="12dp" />
+        android:layout_marginTop="12dp"/>
 
-    <com.google.android.material.button.MaterialButton
+    <Button
         android:id="@+id/btnStop"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="48dp"
         android:text="توقف BLE"
-        android:layout_marginTop="12dp" />
+        android:layout_marginTop="12dp"/>
 
     <TextView
         android:id="@+id/tvResult"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:text="نتیجه: -"
-        android:layout_marginTop="16dp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
-
+        android:layout_marginTop="16dp"/>
 </LinearLayout>
