@@ -14,16 +14,16 @@ import com.soma.consumer.qr.QrScanner
 
 class MainActivity : AppCompatActivity() {
 
-    // View ها
+    // Viewها
     private lateinit var tvStatus: TextView
     private lateinit var tvResult: TextView
     private lateinit var btnQr: Button
     private lateinit var btnStartScan: Button
     private lateinit var btnStopScan: Button
 
-    // سرویس‌ها (بعد از اجازه ساخته می‌شوند)
-    private var bleClient: BLEClient? = null
-    private var qrScanner: QrScanner? = null
+    // سرویس‌ها
+    private lateinit var bleClient: BLEClient
+    private lateinit var qrScanner: QrScanner
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,11 +35,12 @@ class MainActivity : AppCompatActivity() {
         btnStartScan = findViewById(R.id.btnStartScan)
         btnStopScan = findViewById(R.id.btnStopScan)
 
-        // اول اجازه‌ها، سپس init
-        checkAndRequestPerms { initAfterPerms() }
+        checkAndRequestPerms {
+            initAfterPerms()
+        }
 
         btnQr.setOnClickListener {
-            qrScanner?.startScan(
+            qrScanner.startScan(
                 onResult = { code ->
                     tvResult.text = "کد: $code"
                     tvStatus.text = "QR دریافت شد ✅"
@@ -47,37 +48,31 @@ class MainActivity : AppCompatActivity() {
                 onCancel = {
                     Toast.makeText(this, "اسکن لغو شد", Toast.LENGTH_SHORT).show()
                 }
-            ) ?: Toast.makeText(this, "اسکنر آماده نیست", Toast.LENGTH_SHORT).show()
+            )
         }
 
         btnStartScan.setOnClickListener {
             if (ensureBleReady()) {
                 tvStatus.text = "در حال اسکن BLE ..."
-                bleClient?.startScan(
+                bleClient.startScan(
                     onFound = { device ->
                         tvStatus.text = "پیدا شد: $device"
                     },
                     onStop = {
                         tvStatus.text = "اسکن متوقف شد"
                     }
-                ) ?: Toast.makeText(this, "BLE آماده نیست", Toast.LENGTH_SHORT).show()
+                )
             }
         }
 
         btnStopScan.setOnClickListener {
-            bleClient?.stopScan()
-            tvStatus.text = "اسکن متوقف شد"
+            bleClient.stopScan { tvStatus.text = "اسکن متوقف شد" }
         }
     }
 
     private fun initAfterPerms() {
-        try {
-            // فقط بعد از اجازه‌ها ساخته شوند
-            bleClient = BLEClient(this)
-            qrScanner = QrScanner(this)
-        } catch (t: Throwable) {
-            Toast.makeText(this, "Init error: ${t.message}", Toast.LENGTH_LONG).show()
-        }
+        bleClient = BLEClient(this)
+        qrScanner = QrScanner(this)
     }
 
     private fun checkAndRequestPerms(onGranted: () -> Unit) {
