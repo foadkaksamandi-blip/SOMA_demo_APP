@@ -5,13 +5,11 @@ import android.bluetooth.BluetoothAdapter
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.widget.Button
-import android.widget.TextView
-import android.widget.Toast
+import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.soma.consumer.ble.BleClient
+import com.soma.consumer.ble.BLEClient
 import com.soma.consumer.qr.QrScanner
 
 class MainActivity : AppCompatActivity() {
@@ -23,65 +21,47 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnStartScan: Button
     private lateinit var btnStopScan: Button
 
-    // سرویس‌ها (ایمن در برابر Null)
-    private var bleClient: BleClient? = null
+    // سرویس‌ها (بعد از اجازه ساخته می‌شوند)
+    private var bleClient: BLEClient? = null
     private var qrScanner: QrScanner? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Bind
         tvStatus = findViewById(R.id.tvStatus)
         tvResult = findViewById(R.id.tvResult)
         btnQr = findViewById(R.id.btnQr)
         btnStartScan = findViewById(R.id.btnStartScan)
         btnStopScan = findViewById(R.id.btnStopScan)
 
-        // Init BLE client safely
-        try {
-            bleClient = BleClient(this)
-        } catch (e: Throwable) {
-            bleClient = null
-            tvStatus.text = "خطا در راه‌اندازی BLE"
-        }
-
-        // Init QR scanner safely
-        try {
-            qrScanner = QrScanner(this)
-        } catch (e: Throwable) {
-            qrScanner = null
-            tvStatus.text = "اسکنر QR در دسترس نیست"
-        }
+        // اول اجازه‌ها، سپس init
+        checkAndRequestPerms { initAfterPerms() }
 
         btnQr.setOnClickListener {
-            val scanner = qrScanner
-            if (scanner == null) {
-                Toast.makeText(this, "اسکنر QR آماده نیست", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-            scanner.startScan(
+            qrScanner?.startScan(
                 onResult = { code ->
                     tvResult.text = "کد: $code"
-                    tvStatus.text = "✅ نتیجه‌ی QR دریافت شد"
+                    tvStatus.text = "QR دریافت شد ✅"
                 },
                 onCancel = {
                     Toast.makeText(this, "اسکن لغو شد", Toast.LENGTH_SHORT).show()
                 }
-            )
+            ) ?: Toast.makeText(this, "اسکنر آماده نیست", Toast.LENGTH_SHORT).show()
         }
 
         btnStartScan.setOnClickListener {
-            if (!ensureBleScanPermissions()) return@setOnClickListener
-            tvStatus.text = "در حال اسکن BLE ..."
-            bleClient?.startScan(
-                onFound = { device ->
-                    tvStatus.text = "یافت شد: $device"
-                },
-                onStop = {
-                    tvStatus.text = "اسکن متوقف شد"
-                }
-            ) ?: Toast.makeText(this, "BLE Client آماده نیست", Toast.LENGTH_SHORT).show()
+            if (ensureBleReady()) {
+                tvStatus.text = "در حال اسکن BLE ..."
+                bleClient?.startScan(
+                    onFound = { device ->
+                        tvStatus.text = "پیدا شد: $device"
+                    },
+                    onStop = {
+                        tvStatus.text = "اسکن متوقف شد"
+                    }
+                ) ?: Toast.makeText(this, "BLE آماده نیست", Toast.LENGTH_SHORT).show()
+            }
         }
 
         btnStopScan.setOnClickListener {
@@ -90,32 +70,56 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun ensureBleScanPermissions(): Boolean {
+    private fun initAfterPerms() {
+        try {
+            // فقط بعد از اجازه‌ها ساخته شوند
+            bleClient = BLEClient(this)
+            qrScanner = QrScanner(this)
+        } catch (t: Throwable) {
+            Toast.makeText(this, "Init error: ${t.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun checkAndRequestPerms(onGranted: () -> Unit) {
+        val needs = mutableListOf<String>()
+
+        if (Build.VERSION.SDK_INT >= 31) {
+            needs += listOf(
+                Manifest.permission.BLUETOOTH_SCAN,
+                Manifest.permission.BLUETOOTH_CONNECT
+            )
+        } else {
+            needs += Manifest.permission.ACCESS_FINE_LOCATION
+        }
+        needs += Manifest.permission.CAMERA
+
+        val toAsk = needs.filter {
+            ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
+        }
+
+        if (toAsk.isEmpty()) onGranted()
+        else ActivityCompat.requestPermissions(this, toAsk.toTypedArray(), 101)
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == 101 && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
+            initAfterPerms()
+        } else {
+            Toast.makeText(this, "اجازه‌ها لازم‌اند", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun ensureBleReady(): Boolean {
         val adapter = BluetoothAdapter.getDefaultAdapter()
         if (adapter == null) {
-            Toast.makeText(this, "بلوتوث در دستگاه وجود ندارد", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "بلوتوث در دسترس نیست", Toast.LENGTH_SHORT).show()
             return false
         }
-
-        val needed = mutableListOf<String>()
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN)
-                != PackageManager.PERMISSION_GRANTED
-            ) needed += Manifest.permission.BLUETOOTH_SCAN
-
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT)
-                != PackageManager.PERMISSION_GRANTED
-            ) needed += Manifest.permission.BLUETOOTH_CONNECT
-        } else {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED
-            ) needed += Manifest.permission.ACCESS_FINE_LOCATION
-        }
-
-        return if (needed.isNotEmpty()) {
-            ActivityCompat.requestPermissions(this, needed.toTypedArray(), 200)
-            false
-        } else true
+        return true
     }
 }
