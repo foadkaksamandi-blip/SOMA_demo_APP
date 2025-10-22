@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.bluetooth.*
 import android.bluetooth.le.*
 import android.content.Context
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.os.ParcelUuid
@@ -11,24 +12,24 @@ import android.util.Log
 import java.util.UUID
 
 /**
- * Central BLE:
- * - Scan با فیلتر SERVICE_UUID
- * - Connect به اولین فروشنده
- * - Discover و Read از CHAR_TX_UUID
- * - onFound: پیام وضعیت/داده برای UI
- * - onStop: اتمام عملیات (یا تایم‌اوت)
+ * BLE Client – اسکن دستگاه فروشنده و خواندن پیام (Notify/Read) از روی ویژگی TX
  */
-class BleClient(private val context: Context) {
+class BLEClient(private val context: Context) {
 
     companion object {
+        // UUID ها را در صورت نیاز با مقادیر خودت عوض کن
         val SERVICE_UUID: UUID = UUID.fromString("0000feed-0000-1000-8000-00805f9b34fb")
         val CHAR_TX_UUID: UUID = UUID.fromString("0000beef-0000-1000-8000-00805f9b34fb")
-        private const val TAG = "BleClient"
+
+        private const val TAG = "BLEClient"
         private const val TIMEOUT_MS = 15_000L
     }
 
-    private val btMgr = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-    private val adapter: BluetoothAdapter? get() = btMgr.adapter
+    private val btMgr: BluetoothManager? by lazy {
+        context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
+    }
+    private val adapter: BluetoothAdapter? get() = btMgr?.adapter
+
     private var scanner: BluetoothLeScanner? = null
     private var scanCallback: ScanCallback? = null
     private var gatt: BluetoothGatt? = null
@@ -36,18 +37,31 @@ class BleClient(private val context: Context) {
     private val main = Handler(Looper.getMainLooper())
     private var timeoutPosted = false
 
+    /**
+     * اسکن را شروع می‌کند.
+     * @param onFound وقتی پیام/دیواس پیدا شد صدا می‌خورد (متن پیام یا توضیح)
+     * @param onStop وقتی اسکن/اتصال پایان یافت صدا می‌خورد
+     */
     @SuppressLint("MissingPermission")
     fun startScan(onFound: (String) -> Unit, onStop: () -> Unit) {
         val ad = adapter ?: run {
             onFound("Bluetooth adapter not available")
-            onStop(); return
+            onStop()
+            return
         }
-        scanner = ad.bluetoothLeScanner ?: run {
-            onFound("BLE scanner not available")
-            onStop(); return
+        if (!ad.isEnabled) {
+            onFound("Bluetooth adapter is disabled")
+            onStop()
+            return
         }
 
-        // فیلتر روی Service UUID فروشنده
+        scanner = ad.bluetoothLeScanner ?: run {
+            onFound("BLE scanner not available")
+            onStop()
+            return
+        }
+
+        // فقط سرویس مورد نظر
         val filters = listOf(
             ScanFilter.Builder().setServiceUuid(ParcelUuid(SERVICE_UUID)).build()
         )
@@ -58,9 +72,9 @@ class BleClient(private val context: Context) {
         scanCallback = object : ScanCallback() {
             override fun onScanResult(callbackType: Int, result: ScanResult) {
                 val dev = result.device
-                onFound("یافت شد: ${dev.name ?: "(بدون‌نام)"} | ${dev.address}")
-                stopInternal(onStop) // توقف اسکن
-                connect(dev, onFound, onStop)  // اتصال به همان فروشنده
+                onFound("دستگاه یافت شد: ${dev.name ?: "(بی‌نام)"} | ${dev.address}")
+                stopInternal(onStop) // اسکن را متوقف کن
+                connect(dev, onFound, onStop) // وصل شو
             }
 
             override fun onScanFailed(errorCode: Int) {
@@ -69,15 +83,15 @@ class BleClient(private val context: Context) {
             }
         }
 
-        scanner?.startScan(filters, settings, scanCallback)
-        onFound("🔎 اسکن شروع شد…")
+        scanner!!.startScan(filters, settings, scanCallback)
+        onFound("اسکن شروع شد …")
 
-        // تایم‌اوت برای اسکن
+        // تایم‌اوت
         if (!timeoutPosted) {
             timeoutPosted = true
             main.postDelayed({
                 timeoutPosted = false
-                onFound("⏱️ اسکن به زمان‌سنج رسید")
+                onFound("اسکن به زمان‌بندی رسید (Timeout)")
                 stopInternal(onStop)
             }, TIMEOUT_MS)
         }
@@ -94,12 +108,12 @@ class BleClient(private val context: Context) {
         onFound: (String) -> Unit,
         onStop: () -> Unit
     ) {
-        onFound("اتصال به فروشنده…")
+        onFound("اتصال به فروشنده …")
         gatt = device.connectGatt(context, false, object : BluetoothGattCallback() {
 
             override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
                 if (newState == BluetoothProfile.STATE_CONNECTED) {
-                    onFound("متصل شد ✅ — در حال کشف سرویس‌ها…")
+                    onFound("متصل شد ✅ – در حال کشف سرویس‌ها")
                     gatt.discoverServices()
                 } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                     onFound("قطع اتصال")
@@ -118,10 +132,13 @@ class BleClient(private val context: Context) {
                 val tx = svc.getCharacteristic(CHAR_TX_UUID)
                 if (tx == null) {
                     onFound("Characteristic یافت نشد")
-                    gatt.disconnect(); return
+                    gatt.disconnect()
+                    return
                 }
+
+                // اول یک read ساده (اگر notify هم داشتی می‌تونی بعداً اضافه کنی)
                 val ok = gatt.readCharacteristic(tx)
-                if (!ok) onFound("خواندن آغاز نشد")
+                if (!ok) onFound("درخواست Read ارسال نشد")
             }
 
             override fun onCharacteristicRead(
@@ -132,8 +149,7 @@ class BleClient(private val context: Context) {
                 if (characteristic.uuid == CHAR_TX_UUID) {
                     val bytes = characteristic.value ?: ByteArray(0)
                     val msg = try { String(bytes) } catch (_: Throwable) { "[bytes:${bytes.size}]" }
-                    onFound("دریافت از فروشنده: $msg")
-                    // اینجا می‌تونی validate کنی و ادامه فلو پرداخت رو جلو ببری
+                    onFound("پیام دریافتی: $msg")
                     gatt.disconnect()
                 }
             }
@@ -148,6 +164,7 @@ class BleClient(private val context: Context) {
         onStop?.invoke()
     }
 
+    @SuppressLint("MissingPermission")
     private fun closeGatt() {
         try { gatt?.close() } catch (_: Throwable) {}
         gatt = null
