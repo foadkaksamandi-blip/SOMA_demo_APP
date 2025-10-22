@@ -44,9 +44,9 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, "نتیجه QR: $result", Toast.LENGTH_SHORT).show()
         }
 
-        findViewById<Button?>(R.id.btnStartScan)?.setOnClickListener { ensurePermsThenStart() }
-        findViewById<Button?>(R.id.btnStopScan)?.setOnClickListener { bleClient.stopScan() }
-        findViewById<Button?>(R.id.btnQR)?.setOnClickListener { qrScanner.startScan() }
+        findViewById<Button>(R.id.btnStartScan).setOnClickListener { ensurePermsThenStart() }
+        findViewById<Button>(R.id.btnStopScan).setOnClickListener { bleClient.stopScan() }
+        findViewById<Button>(R.id.btnQR).setOnClickListener { qrScanner.startScan() }
 
         ensurePermsThenStart()
     }
