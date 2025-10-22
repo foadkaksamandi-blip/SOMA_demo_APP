@@ -1,62 +1,51 @@
 package com.soma.consumer.qr
 
-import android.widget.Toast
-import android.util.Log
-import androidx.activity.ComponentActivity
+import android.app.Activity
+import android.content.Intent
+import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import com.google.zxing.integration.android.IntentIntegrator
+import com.journeyapps.barcodescanner.IntentIntegrator
 
 /**
- * اسکنر QR ساده که با Activity Result API کار می‌کند
- * و نتیجه را از طریق کال‌بک‌ها برمی‌گرداند.
- *
- * استفاده در MainActivity:
- *   private lateinit var qr: QrScanner
- *   override fun onCreate(...) {
- *       qr = QrScanner(this)
- *       btnQR.setOnClickListener {
- *           qr.startScan(
- *               onResult = { content -> tvResult.text = content },
- *               onCancel = { Toast.makeText(this, "لغو شد", Toast.LENGTH_SHORT).show() }
- *           )
- *       }
- *   }
+ * ساده‌ترین اسکنر QR با ZXing-Embedded.
+ * امضا دقیقاً مطابق استفاده در MainActivity:
+ *   startScan(onResult = { ... }, onCancel = { ... })
  */
-class QrScanner(private val activity: ComponentActivity) {
-
-    private var onResultCb: ((String) -> Unit)? = null
-    private var onCancelCb: (() -> Unit)? = null
+class QrScanner(private val activity: Activity) {
 
     private val launcher = activity.registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        val parsed = IntentIntegrator.parseActivityResult(result.resultCode, result.data)
-        if (parsed != null && parsed.contents != null) {
-            Log.d("QR", "Scan success: ${parsed.contents}")
-            Toast.makeText(activity, "نتیجه QR: ${parsed.contents}", Toast.LENGTH_SHORT).show()
-            onResultCb?.invoke(parsed.contents!!)
+    ) { res: ActivityResult ->
+        val data: Intent? = res.data
+        val result = IntentIntegrator.parseActivityResult(res.resultCode, data)
+        if (result != null && result.contents != null) {
+            onResultCallback?.invoke(result.contents!!)
         } else {
-            Log.d("QR", "Scan canceled or empty")
-            Toast.makeText(activity, "اسکن لغو/بی‌نتیجه", Toast.LENGTH_SHORT).show()
-            onCancelCb?.invoke()
+            onCancelCallback?.invoke()
         }
+        // مصرف و آزادسازی
+        onResultCallback = null
+        onCancelCallback = null
     }
 
-    /** شروع اسکن */
-    fun startScan(onResult: (String) -> Unit, onCancel: (() -> Unit)? = null) {
-        onResultCb = onResult
-        onCancelCb = onCancel
+    private var onResultCallback: ((String) -> Unit)? = null
+    private var onCancelCallback: (() -> Unit)? = null
+
+    fun startScan(
+        onResult: (String) -> Unit,
+        onCancel: () -> Unit
+    ) {
+        onResultCallback = onResult
+        onCancelCallback = onCancel
 
         val integrator = IntentIntegrator(activity).apply {
             setDesiredBarcodeFormats(IntentIntegrator.QR_CODE)
-            setBeepEnabled(true)
-            setOrientationLocked(false)
-            setPrompt("کد QR را مقابل دوربین قرار دهید")
+            setPrompt("QR را اسکن کنید")
+            setBeepEnabled(false)
+            setOrientationLocked(true)
+            // از createScanIntent استفاده می‌کنیم تا با Activity Result Launcher کار کند
         }
-
-        // Intent آماده برای لانچر
         val intent = integrator.createScanIntent()
-        Log.d("QR", "Launching scanner intent…")
         launcher.launch(intent)
     }
 }
