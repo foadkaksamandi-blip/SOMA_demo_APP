@@ -1,44 +1,41 @@
 package com.soma.consumer.qr
 
 import android.app.Activity
-import android.content.Intent
-import androidx.activity.result.ActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import com.journeyapps.barcodescanner.IntentIntegrator
+import androidx.activity.result.ActivityResultLauncher
+import com.journeyapps.barcodescanner.ScanContract
+import com.journeyapps.barcodescanner.ScanOptions
 
-class QrScanner(private val activity: Activity) {
+class QRScanner(private val activity: Activity) {
 
-    private val launcher = activity.registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { res: ActivityResult ->
-        val data: Intent? = res.data
-        val result = IntentIntegrator.parseActivityResult(res.resultCode, data)
-        if (result != null && result.contents != null) {
-            onResultCallback?.invoke(result.contents!!)
-        } else {
-            onCancelCallback?.invoke()
+    private var launcher: ActivityResultLauncher<ScanOptions>? = null
+
+    /**
+     * باید از Activity فراخوانی شود (مثلاً در onCreate) تا launcher ثبت شود.
+     */
+    fun register(
+        onResult: (String) -> Unit,
+        onCancel: () -> Unit = {}
+    ) {
+        launcher = activity.registerForActivityResult(ScanContract()) { result ->
+            if (result != null && !result.contents.isNullOrEmpty()) {
+                onResult(result.contents!!)
+            } else {
+                onCancel()
+            }
         }
-        onResultCallback = null
-        onCancelCallback = null
     }
 
-    private var onResultCallback: ((String) -> Unit)? = null
-    private var onCancelCallback: (() -> Unit)? = null
-
     fun startScan(
-        onResult: (String) -> Unit,
-        onCancel: () -> Unit
+        prompt: String = "لطفاً QR را اسکن کنید…",
+        beep: Boolean = false
     ) {
-        onResultCallback = onResult
-        onCancelCallback = onCancel
-
-        val integrator = IntentIntegrator(activity).apply {
-            setDesiredBarcodeFormats(IntentIntegrator.QR_CODE)
-            setPrompt("QR را اسکن کنید")
-            setBeepEnabled(false)
+        val opts = ScanOptions().apply {
+            setDesiredBarcodeFormats(ScanOptions.QR_CODE)
+            setPrompt(prompt)
+            setBeepEnabled(beep)
             setOrientationLocked(true)
         }
-        val intent = integrator.createScanIntent()
-        launcher.launch(intent)
+        launcher?.launch(opts)
+            ?: throw IllegalStateException("QRScanner.register() باید قبل از startScan صدا زده شود.")
     }
 }
