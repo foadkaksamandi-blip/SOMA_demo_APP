@@ -13,38 +13,28 @@ class MainActivity : AppCompatActivity() {
     private lateinit var bleClient: BleClient
     private lateinit var qrScanner: QRScanner
 
-    // اگر برای فعال‌سازی بلوتوث یا مجوزها نیاز شد:
     private val enableBt =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { /* result ignored */ }
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { /* no-op */ }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // ✅ مقداردهی صحیح ViewBinding
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // BLE
-        bleClient = BleClient(this) { stateText ->
-            // آپدیت متن وضعیت — دقت کن .text استفاده شده
-            binding.tvStatus.text = stateText
-        }
+        bleClient = BleClient(
+            context = this,
+            statusCallback = { text -> binding.tvStatus.text = text }
+        )
 
-        // QR
-        qrScanner = QRScanner(this) { qrText ->
-            binding.tvResult.text = qrText
-        }
+        qrScanner = QRScanner(
+            activity = this,
+            onResult = { text -> binding.tvResult.text = text }
+        )
 
-        // دکمه‌ها
-        binding.btnQr.setOnClickListener {
-            qrScanner.startScan()
-        }
-        binding.btnStart.setOnClickListener {
-            bleClient.startScanAndConnect(enableBt)
-        }
-        binding.btnStop.setOnClickListener {
-            bleClient.stop()
-        }
+        binding.btnQr.setOnClickListener { qrScanner.startScan() }
+        binding.btnStart.setOnClickListener { bleClient.startScanAndConnect(enableBt) }
+        binding.btnStop.setOnClickListener { bleClient.stop() }
     }
 
     override fun onResume() {
