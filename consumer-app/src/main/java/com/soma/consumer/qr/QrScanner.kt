@@ -2,27 +2,23 @@ package com.soma.consumer.qr
 
 import android.app.Activity
 import android.content.Intent
-import com.google.zxing.integration.android.IntentIntegrator
+import com.journeyapps.barcodescanner.IntentIntegrator
 
-class QRScanner(
-    private val activity: Activity,
-    private val onResult: (String) -> Unit
-) {
+class QrScanner(private val activity: Activity) {
 
-    private val integrator = IntentIntegrator(activity).apply {
-        setDesiredBarcodeFormats(IntentIntegrator.QR_CODE)
-        setPrompt("اسکن QR کد را انجام دهید")
-        setCameraId(0)
-        setBeepEnabled(true)
-        setBarcodeImageEnabled(false)
-    }
-
-    fun startScan() {
+    fun startScan(onResult: (String) -> Unit, onCancel: () -> Unit) {
+        val integrator = IntentIntegrator(activity)
+        integrator.setOrientationLocked(false)
+        integrator.setBeepEnabled(true)
+        integrator.setPrompt("کد QR را اسکن کنید")
         integrator.initiateScan()
-    }
 
-    fun handleActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        val result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data)
-        result?.contents?.let { onResult(it) }
+        activity.activityResultRegistry.register("qr_scan", 
+            androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
+        ) { result ->
+            val data: Intent? = result.data
+            val contents = IntentIntegrator.parseActivityResult(result.resultCode, data)?.contents
+            if (contents != null) onResult(contents) else onCancel()
+        }
     }
 }
