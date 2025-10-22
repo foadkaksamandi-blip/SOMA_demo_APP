@@ -2,6 +2,7 @@ package com.soma.consumer.qr
 
 import android.app.Activity
 import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
 
@@ -9,9 +10,6 @@ class QRScanner(private val activity: Activity) {
 
     private var launcher: ActivityResultLauncher<ScanOptions>? = null
 
-    /**
-     * باید از Activity فراخوانی شود (مثلاً در onCreate) تا launcher ثبت شود.
-     */
     fun register(
         onResult: (String) -> Unit,
         onCancel: () -> Unit = {}
