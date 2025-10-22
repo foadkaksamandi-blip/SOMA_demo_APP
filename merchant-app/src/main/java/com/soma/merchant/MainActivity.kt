@@ -6,9 +6,9 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.provider.Settings
 import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -17,48 +17,51 @@ import com.soma.merchant.ble.BLEPeripheralService
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var btnStartBle: Button
-    private lateinit var btnStopBle: Button
-    private lateinit var tvStatus: TextView
-
     private val ble = BLEPeripheralService()
 
     private val enableBtLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
-    ) { /* ignore */ }
+    ) { /* no-op */ }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        btnStartBle = findViewById(R.id.btnStartBle)
-        btnStopBle = findViewById(R.id.btnStopBle)
-        tvStatus = findViewById(R.id.tvStatus)
+        // تلاش برای دریافت ویوها (ممکن است در لایه فعلی نام‌ها فرق داشته باشد)
+        val btnStart: Button? = findViewById(R.id.btnStartBle)
+        val btnStop: Button?  = findViewById(R.id.btnStopBle)
+        val tvStatus: TextView? = findViewById(R.id.tvStatus)
 
-        btnStartBle.setOnClickListener {
+        // اگر هرکدام نبود، پیغام بده ولی کرش نکن
+        if (btnStart == null) Toast.makeText(this, "btnStartBle در layout پیدا نشد", Toast.LENGTH_SHORT).show()
+        if (btnStop  == null) Toast.makeText(this, "btnStopBle در layout پیدا نشد", Toast.LENGTH_SHORT).show()
+        if (tvStatus == null) Toast.makeText(this, "tvStatus در layout پیدا نشد", Toast.LENGTH_SHORT).show()
+
+        btnStart?.setOnClickListener {
             if (ensureBluetoothReady()) {
                 ble.startAdvertising(this)
-                tvStatus.text = "وضعیت: ادورتایز فعال"
+                tvStatus?.text = "وضعیت: ادورتایز فعال"
             }
         }
 
-        btnStopBle.setOnClickListener {
+        btnStop?.setOnClickListener {
             ble.stopAdvertising()
-            tvStatus.text = "وضعیت: متوقف شد"
+            tvStatus?.text = "وضعیت: متوقف شد"
         }
     }
 
     private fun ensureBluetoothReady(): Boolean {
-        val adapter = BluetoothAdapter.getDefaultAdapter() ?: return false
-
+        val adapter = BluetoothAdapter.getDefaultAdapter()
+        if (adapter == null) {
+            Toast.makeText(this, "این دستگاه بلوتوث ندارد", Toast.LENGTH_SHORT).show()
+            return false
+        }
         if (!adapter.isEnabled) {
             enableBtLauncher.launch(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE))
             return false
         }
 
-        // دسترسی‌ها
         val needed = mutableListOf<String>()
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_ADVERTISE)
                 != PackageManager.PERMISSION_GRANTED
