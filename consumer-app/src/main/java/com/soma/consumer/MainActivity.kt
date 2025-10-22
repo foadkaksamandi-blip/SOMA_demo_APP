@@ -1,80 +1,65 @@
 package com.soma.consumer
 
-import android.Manifest
-import android.content.pm.PackageManager
 import android.os.Bundle
-import androidx.activity.result.contract.ActivityResultContracts
+import android.widget.Button
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
-import com.soma.consumer.databinding.ActivityMainBinding
+import com.soma.consumer.ble.BleClient
+import com.soma.consumer.qr.QrScanner
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var binding: ActivityMainBinding
+    private lateinit var ble: BleClient
 
-    // اگر کلاس‌های BLE و QR شما نام‌های دیگری دارند، این‌ها را مطابق پروژه خود تغییر بدهید
-    private val ble by lazy { com.soma.consumer.ble.BleClient(this) }
-    private val qrScanner by lazy { com.soma.consumer.qr.QrScanner(this) }
-
-    private val permissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) { /* در این دمو فقط درخواست می‌کنیم؛ هندل لازم نیست */ }
+    private lateinit var tvStatus: TextView
+    private lateinit var tvResult: TextView
+    private lateinit var btnQr: Button
+    private lateinit var btnStart: Button
+    private lateinit var btnStop: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+        setContentView(R.layout.activity_main)
 
-        requestNeededPermissions()
+        tvStatus = findViewById(R.id.tvStatus)
+        tvResult = findViewById(R.id.tvResult)
+        btnQr = findViewById(R.id.btnQr)
+        btnStart = findViewById(R.id.btnStart)
+        btnStop = findViewById(R.id.btnStop)
 
-        binding.btnQr.setOnClickListener {
-            qrScanner.startScan(
-                onResult = { text ->
-                    binding.tvResult.text = "نتیجه: $text"
-                },
-                onError = { e ->
-                    binding.tvResult.text = "خطا در QR: ${e.message}"
+        ble = BleClient(this)
+
+        btnQr.setOnClickListener {
+            QrScanner.startScan(
+                activity = this@MainActivity,
+                onResult = { text: String -> tvResult.text = "QR: $text" },
+                onError = { t: Throwable -> tvResult.text = "خطا در QR: ${t.message}" }
+            )
+        }
+
+        btnStart.setOnClickListener {
+            tvStatus.text = "وضعیت: شروع اتصال BLE…"
+            ble.start(
+                listener = object : BleClient.Listener {
+                    override fun onStatus(status: BleClient.Status) {
+                        tvStatus.text = "وضعیت: $status"
+                    }
+
+                    override fun onLog(msg: String) {
+                        // می‌توانی اگر خواستی لاگ‌ها را هم نمایش بدهی
+                        // tvResult.text = msg
+                    }
+
+                    override fun onTxResult(ok: Boolean) {
+                        tvResult.text = if (ok) "ارسال موفق" else "ارسال ناموفق"
+                    }
                 }
             )
         }
 
-        binding.btnStart.setOnClickListener {
-            binding.tvStatus.text = "وضعیت: تلاش برای اتصال BLE"
-            ble.start(
-                onConnected = { binding.tvStatus.text = "وضعیت: متصل" },
-                onDisconnected = { binding.tvStatus.text = "وضعیت: قطع اتصال" },
-                onError = { e -> binding.tvStatus.text = "خطای BLE: ${e.message}" }
-            )
-        }
-
-        binding.btnStop.setOnClickListener {
+        btnStop.setOnClickListener {
             ble.stop()
-            binding.tvStatus.text = "وضعیت: متوقف"
+            tvStatus.text = "وضعیت: متوقف شد"
         }
-    }
-
-    private fun requestNeededPermissions() {
-        val needs = mutableListOf<String>()
-        // دوربین برای QR
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
-            != PackageManager.PERMISSION_GRANTED) {
-            needs += Manifest.permission.CAMERA
-        }
-        // BLE (Android 12+)
-        val blePerms = arrayOf(
-            Manifest.permission.BLUETOOTH_SCAN,
-            Manifest.permission.BLUETOOTH_CONNECT
-        )
-        blePerms.forEach {
-            if (ActivityCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED) {
-                needs += it
-            }
-        }
-        if (needs.isNotEmpty()) permissionLauncher.launch(needs.toTypedArray())
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        ble.stop()
     }
 }
