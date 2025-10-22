@@ -11,86 +11,94 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.journeyapps.barcodescanner.ScanContract
-import com.journeyapps.barcodescanner.ScanIntentResult
-import com.journeyapps.barcodescanner.ScanOptions
 import com.soma.consumer.ble.BleClient
 import com.soma.consumer.qr.QrScanner
 
 class MainActivity : AppCompatActivity() {
 
-    // BLE
-    private lateinit var bleClient: BleClient
-
-    // UI
+    // View ها
     private lateinit var tvStatus: TextView
     private lateinit var tvResult: TextView
     private lateinit var btnQr: Button
     private lateinit var btnStartScan: Button
     private lateinit var btnStopScan: Button
 
-    // لانچر اسکن QR (باید داخل Activity باشد)
-    private val qrLauncher = registerForActivityResult(ScanContract()) { result: ScanIntentResult ->
-        if (result.contents != null) {
-            tvResult.text = "نتیجه: ${result.contents}"
-            tvStatus.text = "QR دریافت شد ✅"
-        } else {
-            Toast.makeText(this, "اسکن لغو شد", Toast.LENGTH_SHORT).show()
-        }
-    }
+    // سرویس‌ها (ایمن در برابر Null)
+    private var bleClient: BleClient? = null
+    private var qrScanner: QrScanner? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // bind views
+        // Bind
         tvStatus = findViewById(R.id.tvStatus)
         tvResult = findViewById(R.id.tvResult)
         btnQr = findViewById(R.id.btnQr)
         btnStartScan = findViewById(R.id.btnStartScan)
         btnStopScan = findViewById(R.id.btnStopScan)
 
-        // BLE
-        bleClient = BleClient(this)
+        // Init BLE client safely
+        try {
+            bleClient = BleClient(this)
+        } catch (e: Throwable) {
+            bleClient = null
+            tvStatus.text = "خطا در راه‌اندازی BLE"
+        }
 
-        // رویداد اسکن QR
+        // Init QR scanner safely
+        try {
+            qrScanner = QrScanner(this)
+        } catch (e: Throwable) {
+            qrScanner = null
+            tvStatus.text = "اسکنر QR در دسترس نیست"
+        }
+
         btnQr.setOnClickListener {
-            // لانچر را با تنظیمات آماده شده صدا بزن
-            val options: ScanOptions = QrScanner().options()
-            qrLauncher.launch(options)
-        }
-
-        // شروع اسکن BLE
-        btnStartScan.setOnClickListener {
-            if (ensureBleScanPermissions()) {
-                tvStatus.text = "در حال اسکن BLE ..."
-                bleClient.startScan(
-                    onFound = { device ->
-                        tvStatus.text = "یافت شد: $device"
-                    },
-                    onStop = {
-                        tvStatus.text = "اسکن متوقف شد"
-                    }
-                )
+            val scanner = qrScanner
+            if (scanner == null) {
+                Toast.makeText(this, "اسکنر QR آماده نیست", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
             }
+            scanner.startScan(
+                onResult = { code ->
+                    tvResult.text = "کد: $code"
+                    tvStatus.text = "✅ نتیجه‌ی QR دریافت شد"
+                },
+                onCancel = {
+                    Toast.makeText(this, "اسکن لغو شد", Toast.LENGTH_SHORT).show()
+                }
+            )
         }
 
-        // توقف اسکن BLE
+        btnStartScan.setOnClickListener {
+            if (!ensureBleScanPermissions()) return@setOnClickListener
+            tvStatus.text = "در حال اسکن BLE ..."
+            bleClient?.startScan(
+                onFound = { device ->
+                    tvStatus.text = "یافت شد: $device"
+                },
+                onStop = {
+                    tvStatus.text = "اسکن متوقف شد"
+                }
+            ) ?: Toast.makeText(this, "BLE Client آماده نیست", Toast.LENGTH_SHORT).show()
+        }
+
         btnStopScan.setOnClickListener {
-            bleClient.stopScan()
+            bleClient?.stopScan()
             tvStatus.text = "اسکن متوقف شد"
         }
     }
 
-    /** بررسی و درخواست دسترسی‌های BLE برای اسکن */
     private fun ensureBleScanPermissions(): Boolean {
         val adapter = BluetoothAdapter.getDefaultAdapter()
         if (adapter == null) {
-            Toast.makeText(this, "بلوتوث در دستگاه نیست!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "بلوتوث در دستگاه وجود ندارد", Toast.LENGTH_SHORT).show()
             return false
         }
 
         val needed = mutableListOf<String>()
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN)
                 != PackageManager.PERMISSION_GRANTED
@@ -109,10 +117,5 @@ class MainActivity : AppCompatActivity() {
             ActivityCompat.requestPermissions(this, needed.toTypedArray(), 200)
             false
         } else true
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        bleClient.stopScan()
     }
 }
