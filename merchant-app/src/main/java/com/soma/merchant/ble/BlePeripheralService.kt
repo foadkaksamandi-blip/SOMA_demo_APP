@@ -1,138 +1,159 @@
 package com.soma.merchant.ble
 
-import android.Manifest
-import android.annotation.SuppressLint
-import android.bluetooth.*
+import android.app.Service
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothGatt
+import android.bluetooth.BluetoothGattCharacteristic
+import android.bluetooth.BluetoothGattDescriptor
+import android.bluetooth.BluetoothGattServer
+import android.bluetooth.BluetoothGattServerCallback
+import android.bluetooth.BluetoothGattService
+import android.bluetooth.BluetoothManager
+import android.bluetooth.le.AdvertiseCallback
 import android.bluetooth.le.AdvertiseData
 import android.bluetooth.le.AdvertiseSettings
-import android.bluetooth.le.BluetoothLeAdvertiser
-import android.content.Context
-import android.content.pm.PackageManager
+import android.content.Intent
+import android.os.Binder
 import android.os.Build
-import androidx.core.app.ActivityCompat
-import java.util.*
+import android.os.IBinder
+import android.os.ParcelUuid
+import android.util.Log
+import java.util.UUID
 
-class BleServer(
-    private val context: Context,
-    private val listener: Listener
-) {
-    interface Listener {
-        fun onStatus(msg: String)
-        fun onClientConnected(addr: String?)
-        fun onClientDisconnected()
-        fun onError(msg: String)
-    }
+class BlePeripheralService : Service() {
 
     companion object {
-        val SERVICE_UUID: UUID = UUID.fromString("0000feed-0000-1000-8000-00805f9b34fb")
-        val CHAR_UUID: UUID = UUID.fromString("0000beef-0000-1000-8000-00805f9b34fb")
+        // باید با CLIENT یکی باشد
+        val SERVICE_UUID: UUID = UUID.fromString("0000180F-0000-1000-8000-00805F9B34FB")
+        val CHAR_TX_UUID: UUID = UUID.fromString("00002A19-0000-1000-8000-00805F9B34FB")
+        private const val TAG = "BlePeripheral"
     }
 
-    private val bm = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-    private val adapter = bm.adapter
-    private var advertiser: BluetoothLeAdvertiser? = null
+    private val binder = LocalBinder()
     private var gattServer: BluetoothGattServer? = null
+    private var isAdvertising = false
 
-    fun isReady(): Boolean = adapter?.isEnabled == true
-
-    fun stop() {
-        try { advertiser?.stopAdvertising(null) } catch (_: Throwable) {}
-        try { gattServer?.close() } catch (_: Throwable) {}
-        advertiser = null
-        gattServer = null
-        listener.onStatus("متوقف شد")
+    inner class LocalBinder : Binder() {
+        fun service(): BlePeripheralService = this@BlePeripheralService
     }
 
-    fun start() {
-        if (!isReady()) {
-            listener.onError("Bluetooth روشن نیست")
-            return
-        }
-        if (!hasPerms()) {
-            listener.onError("مجوزهای BLE داده نشده")
-            return
-        }
-        startGattServer()
-        startAdvertising()
+    override fun onBind(intent: Intent?): IBinder = binder
+
+    override fun onCreate() {
+        super.onCreate()
+        setupGattServer()
     }
 
-    private fun hasPerms(): Boolean {
-        return if (Build.VERSION.SDK_INT >= 31) {
-            ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_ADVERTISE) == PackageManager.PERMISSION_GRANTED &&
-                    ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED
-        } else true
+    override fun onDestroy() {
+        stopAdvertising()
+        gattServer?.close()
+        super.onDestroy()
     }
 
-    @SuppressLint("MissingPermission")
-    private fun startGattServer() {
-        listener.onStatus("ایجاد GATT Server…")
-        gattServer = bm.openGattServer(context, object : BluetoothGattServerCallback() {
-            override fun onConnectionStateChange(device: BluetoothDevice, status: Int, newState: Int) {
-                if (newState == BluetoothProfile.STATE_CONNECTED) {
-                    listener.onClientConnected(device.address)
-                } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                    listener.onClientDisconnected()
-                }
-            }
+    private fun bluetoothAdapter(): BluetoothAdapter? {
+        val manager = getSystemService(BLUETOOTH_SERVICE) as? BluetoothManager
+        return manager?.adapter
+    }
 
-            override fun onCharacteristicReadRequest(
-                device: BluetoothDevice?, requestId: Int, offset: Int, characteristic: BluetoothGattCharacteristic?
-            ) {
-                val value = "HELLO".toByteArray()
-                gattServer?.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, value)
-            }
-
-            override fun onCharacteristicWriteRequest(
-                device: BluetoothDevice?, requestId: Int, characteristic: BluetoothGattCharacteristic?,
-                preparedWrite: Boolean, responseNeeded: Boolean, offset: Int, value: ByteArray?
-            ) {
-                if (responseNeeded) {
-                    gattServer?.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, null)
-                }
-            }
-        })
+    private fun setupGattServer() {
+        val manager = getSystemService(BLUETOOTH_SERVICE) as? BluetoothManager
+        gattServer = manager?.openGattServer(this, gattCallback)
 
         val service = BluetoothGattService(SERVICE_UUID, BluetoothGattService.SERVICE_TYPE_PRIMARY)
-        val characteristic = BluetoothGattCharacteristic(
-            CHAR_UUID,
-            BluetoothGattCharacteristic.PROPERTY_READ or
-                    BluetoothGattCharacteristic.PROPERTY_WRITE or
-                    BluetoothGattCharacteristic.PROPERTY_NOTIFY,
-            BluetoothGattCharacteristic.PERMISSION_READ or
-                    BluetoothGattCharacteristic.PERMISSION_WRITE
+
+        val txChar = BluetoothGattCharacteristic(
+            CHAR_TX_UUID,
+            BluetoothGattCharacteristic.PROPERTY_READ or BluetoothGattCharacteristic.PROPERTY_NOTIFY,
+            BluetoothGattCharacteristic.PERMISSION_READ
         )
-        service.addCharacteristic(characteristic)
+        // یک Descriptor برای نوتیفای
+        val cccd = BluetoothGattDescriptor(
+            UUID.fromString("00002902-0000-1000-8000-00805f9b34fb"),
+            BluetoothGattDescriptor.PERMISSION_READ or BluetoothGattDescriptor.PERMISSION_WRITE
+        )
+        txChar.addDescriptor(cccd)
+        service.addCharacteristic(txChar)
+
         gattServer?.addService(service)
-        listener.onStatus("سرویس آماده شد ✓")
     }
 
-    @SuppressLint("MissingPermission")
-    private fun startAdvertising() {
-        listener.onStatus("پخـش آگهی…")
-        advertiser = adapter.bluetoothLeAdvertiser
-        if (advertiser == null) {
-            listener.onError("Advertiser در دسترس نیست")
-            return
-        }
+    fun startAdvertising(): Boolean {
+        if (isAdvertising) return true
+        val adapter = bluetoothAdapter() ?: return false
+        if (!adapter.isEnabled) return false
+
+        val advertiser = adapter.bluetoothLeAdvertiser ?: return false
+
         val settings = AdvertiseSettings.Builder()
             .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY)
             .setConnectable(true)
+            .setTimeout(0)
             .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_HIGH)
             .build()
 
         val data = AdvertiseData.Builder()
             .setIncludeDeviceName(true)
-            .addServiceUuid(ParcelUuid(SERVICE_UUID))
+            .addServiceUuid(ParcelUuid.fromString(SERVICE_UUID.toString()))
             .build()
 
-        advertiser!!.startAdvertising(settings, data, object : android.bluetooth.le.AdvertiseCallback() {
-            override fun onStartSuccess(settingsInEffect: AdvertiseSettings?) {
-                listener.onStatus("در حال انتشار آگهی ✓")
-            }
+        advertiser.startAdvertising(settings, data, advertiseCallback)
+        isAdvertising = true
+        Log.d(TAG, "startAdvertising()")
+        return true
+    }
 
-            override fun onStartFailure(errorCode: Int) {
-                listener.onError("Advertise failed: $errorCode")
+    fun stopAdvertising() {
+        if (!isAdvertising) return
+        val advertiser = bluetoothAdapter()?.bluetoothLeAdvertiser ?: return
+        advertiser.stopAdvertising(advertiseCallback)
+        isAdvertising = false
+        Log.d(TAG, "stopAdvertising()")
+    }
+
+    private val advertiseCallback = object : AdvertiseCallback() {
+        override fun onStartSuccess(settingsInEffect: AdvertiseSettings?) {
+            Log.d(TAG, "Advertise success")
+        }
+
+        override fun onStartFailure(errorCode: Int) {
+            Log.e(TAG, "Advertise failed: $errorCode")
+            isAdvertising = false
+        }
+    }
+
+    private val gattCallback = object : BluetoothGattServerCallback() {
+
+        override fun onConnectionStateChange(device: android.bluetooth.BluetoothDevice?, status: Int, newState: Int) {
+            Log.d(TAG, "onConnectionStateChange: $newState status=$status")
+        }
+
+        override fun onCharacteristicReadRequest(
+            device: android.bluetooth.BluetoothDevice?,
+            requestId: Int,
+            offset: Int,
+            characteristic: BluetoothGattCharacteristic?
+        ) {
+            if (characteristic?.uuid == CHAR_TX_UUID) {
+                val payload = "HELLO_FROM_MERCHANT".toByteArray()
+                gattServer?.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, payload)
+            } else {
+                gattServer?.sendResponse(device, requestId, BluetoothGatt.GATT_FAILURE, 0, null)
             }
-        })
+        }
+
+        override fun onDescriptorWriteRequest(
+            device: android.bluetooth.BluetoothDevice?,
+            requestId: Int,
+            descriptor: BluetoothGattDescriptor?,
+            preparedWrite: Boolean,
+            responseNeeded: Boolean,
+            offset: Int,
+            value: ByteArray?
+        ) {
+            // اجازه فعال‌سازی نوتیفای
+            if (responseNeeded) {
+                gattServer?.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, value)
+            }
+        }
     }
 }
