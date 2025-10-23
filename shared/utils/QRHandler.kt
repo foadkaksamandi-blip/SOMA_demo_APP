@@ -2,17 +2,28 @@ package shared.utils
 
 import android.graphics.Bitmap
 import com.google.zxing.BarcodeFormat
+import com.google.zxing.EncodeHintType
 import com.google.zxing.qrcode.QRCodeWriter
 
 object QRHandler {
 
-    fun generate(amount: String): Bitmap {
-        val writer = QRCodeWriter()
-        val bitMatrix = writer.encode(amount, BarcodeFormat.QR_CODE, 512, 512)
-        val bmp = Bitmap.createBitmap(512, 512, Bitmap.Config.RGB_565)
-        for (x in 0 until 512)
-            for (y in 0 until 512)
-                bmp.setPixel(x, y, if (bitMatrix[x, y]) -0x1000000 else -0x1)
+    /**
+     * تولید QR Bitmap از متن ورودی (UTF-8)
+     * @param content محتوای QR (مثلاً JSON آفر)
+     * @param size اندازه تصویر خروجی (پیکسل)
+     */
+    fun create(content: String, size: Int = 800): Bitmap {
+        val hints = mapOf(
+            EncodeHintType.CHARACTER_SET to "UTF-8",
+            EncodeHintType.MARGIN to 1
+        )
+        val bitMatrix = QRCodeWriter().encode(content, BarcodeFormat.QR_CODE, size, size, hints)
+        val bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        for (x in 0 until size) {
+            for (y in 0 until size) {
+                bmp.setPixel(x, y, if (bitMatrix[x, y]) 0xFF000000.toInt() else 0xFFFFFFFF.toInt())
+            }
+        }
         return bmp
     }
 }
