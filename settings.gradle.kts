@@ -15,4 +15,7 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "SOMA_demo_APP"
-include(":consumer-app", ":merchant-app")
+
+// ⚠️ نام پوشه‌ها رو دقیق بنویس (حروف دقیق مثل پوشه‌ها در گیت‌هاب)
+include(":consumer-app")
+include(":merchant-app")
