@@ -1,46 +1,82 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
-    <LinearLayout
-        android:orientation="vertical"
-        android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:padding="24dp"
-        android:gravity="center_horizontal">
+        android:text="SOMA — اپ فروشنده (BLE + QR)"
+        android:textStyle="bold"
+        android:textSize="18sp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
 
-        <TextView
-            android:id="@+id/txtStatus"
-            android:text="وضعیت: -"
-            android:textSize="18sp"
-            android:layout_marginBottom="16dp" />
+    <EditText
+        android:id="@+id/editAmount"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:hint="مبلغ خرید (تومان)"
+        android:inputType="number"
+        app:layout_constraintTop_toBottomOf="@id/title"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="16dp"/>
 
-        <EditText
-            android:id="@+id/edtAmount"
-            android:hint="مبلغ خرید (تومان)"
-            android:inputType="number"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp" />
+    <Button
+        android:id="@+id/btnGenerateQR"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="تولید QR خرید"
+        app:layout_constraintTop_toBottomOf="@id/editAmount"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="16dp"/>
 
-        <Button
-            android:id="@+id/btnGenerateQr"
-            android:text="تولید QR خرید"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp" />
+    <ImageView
+        android:id="@+id/imageQR"
+        android:layout_width="220dp"
+        android:layout_height="220dp"
+        android:contentDescription="QR"
+        app:layout_constraintTop_toBottomOf="@id/btnGenerateQR"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="20dp"
+        android:background="@android:color/white"/>
 
-        <Button
-            android:id="@+id/btnBleStart"
-            android:text="شروع BLE"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp" />
+    <TextView
+        android:id="@+id/txtStatus"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="وضعیت: -"
+        app:layout_constraintTop_toBottomOf="@id/imageQR"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="20dp"/>
 
-        <Button
-            android:id="@+id/btnBleStop"
-            android:text="توقف BLE"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
-    </LinearLayout>
-</ScrollView>
+    <Button
+        android:id="@+id/btnBleStart"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="شروع BLE"
+        app:layout_constraintTop_toBottomOf="@id/txtStatus"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="24dp"/>
+
+    <Button
+        android:id="@+id/btnBleStop"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="توقف BLE"
+        app:layout_constraintTop_toBottomOf="@id/btnBleStart"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="12dp"/>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
