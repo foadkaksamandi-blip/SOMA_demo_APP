@@ -1,66 +1,44 @@
-name: Build Consumer & Merchant (Debug)
+name: Build APKs (SOMA Offline Demo)
 
 on:
+  workflow_dispatch: {}
   push:
-    branches:
-      - main
+    branches: [ main ]
   pull_request:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      # Set up job
-      - name: Set up job
-        run: echo "Setting up job"
-
-      # Checkout code
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
-      # Set up Flutter
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
         with:
-          flutter-version: '3.10.5'
+          distribution: temurin
+          java-version: '17'
+          cache: 'gradle'
 
-      # Set up JDK 21
-      - name: Set up JDK 21
-        uses: actions/setup-java@v2
-        with:
-          java-version: '21'
-          distribution: 'adoptopenjdk'
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v3
 
-      # Install dependencies
-      - name: Install dependencies
-        working-directory: SOMA_demo_APP
-        run: flutter pub get
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
 
-      # Build Consumer APK
-      - name: Build Consumer APK
-        working-directory: SOMA_demo_APP
-        run: flutter build apk --debug --target lib/consumer_main.dart
+      - name: Build Consumer & Merchant (Debug)
+        run: ./gradlew :consumer-app:assembleDebug :merchant-app:assembleDebug --stacktrace
 
-      # Build Merchant APK
-      - name: Build Merchant APK
-        working-directory: SOMA_demo_APP
-        run: flutter build apk --debug --target lib/merchant_main.dart
-
-      # Upload APKs (optional)
       - name: Upload Consumer APK(s)
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: consumer-apk
-          path: SOMA_demo_APP/build/app/outputs/flutter-apk/app-debug.apk
+          name: Consumer-APKs
+          path: consumer-app/build/outputs/apk/debug/*.apk
 
       - name: Upload Merchant APK(s)
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: merchant-apk
-          path: SOMA_demo_APP/build/app/outputs/flutter-apk/app-debug.apk
-
-      # Complete job
-      - name: Complete job
-        run: echo "Build and Upload Completed!"
+          name: Merchant-APKs
+          path: merchant-app/build/outputs/apk/debug/*.apk
