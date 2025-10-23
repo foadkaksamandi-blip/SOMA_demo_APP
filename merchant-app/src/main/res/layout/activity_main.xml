@@ -1,82 +1,49 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp">
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="20dp"
+    android:background="#FFFFFF">
 
     <TextView
-        android:id="@+id/title"
-        android:layout_width="0dp"
+        android:id="@+id/tvAmount"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="SOMA — اپ فروشنده (BLE + QR)"
-        android:textStyle="bold"
+        android:text="مبلغ تراکنش: 200000"
         android:textSize="18sp"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        android:textColor="#000000"
+        android:layout_marginBottom="16dp" />
 
-    <EditText
-        android:id="@+id/editAmount"
-        android:layout_width="0dp"
+    <TextView
+        android:id="@+id/tvStatus"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:hint="مبلغ خرید (تومان)"
-        android:inputType="number"
-        app:layout_constraintTop_toBottomOf="@id/title"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="16dp"/>
+        android:text="وضعیت: آماده"
+        android:textSize="16sp"
+        android:textColor="#444444"
+        android:layout_marginBottom="16dp" />
 
     <Button
         android:id="@+id/btnGenerateQR"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="تولید QR خرید"
-        app:layout_constraintTop_toBottomOf="@id/editAmount"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="16dp"/>
-
-    <ImageView
-        android:id="@+id/imageQR"
-        android:layout_width="220dp"
-        android:layout_height="220dp"
-        android:contentDescription="QR"
-        app:layout_constraintTop_toBottomOf="@id/btnGenerateQR"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="20dp"
-        android:background="@android:color/white"/>
-
-    <TextView
-        android:id="@+id/txtStatus"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="وضعیت: -"
-        app:layout_constraintTop_toBottomOf="@id/imageQR"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="20dp"/>
+        android:text="تولید QR"
+        android:layout_marginBottom="12dp" />
 
     <Button
-        android:id="@+id/btnBleStart"
-        android:layout_width="0dp"
+        android:id="@+id/btnStartBLE"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="شروع BLE"
-        app:layout_constraintTop_toBottomOf="@id/txtStatus"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="24dp"/>
+        android:layout_marginBottom="12dp" />
 
-    <Button
-        android:id="@+id/btnBleStop"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="توقف BLE"
-        app:layout_constraintTop_toBottomOf="@id/btnBleStart"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="12dp"/>
+    <ImageView
+        android:id="@+id/ivQR"
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:layout_marginTop="20dp"
+        android:contentDescription="QR Image" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+</LinearLayout>
