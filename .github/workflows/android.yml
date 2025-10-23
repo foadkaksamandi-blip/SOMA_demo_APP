@@ -15,28 +15,34 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Set working directory
+        run: cd SOMA_demo_APP
+
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.24.3'
 
       - name: Install dependencies
+        working-directory: SOMA_demo_APP
         run: flutter pub get
 
       - name: Build Consumer APK
+        working-directory: SOMA_demo_APP
         run: flutter build apk --target lib/consumer_main.dart --debug
 
       - name: Build Merchant APK
+        working-directory: SOMA_demo_APP
         run: flutter build apk --target lib/merchant_main.dart --debug
 
       - name: Upload Consumer APK(s)
         uses: actions/upload-artifact@v4
         with:
           name: Consumer-APKs
-          path: build/app/outputs/flutter-apk/app-debug.apk
+          path: SOMA_demo_APP/build/app/outputs/flutter-apk/app-debug.apk
 
       - name: Upload Merchant APK(s)
         uses: actions/upload-artifact@v4
         with:
           name: Merchant-APKs
-          path: build/app/outputs/flutter-apk/app-debug.apk
+          path: SOMA_demo_APP/build/app/outputs/flutter-apk/app-debug.apk
