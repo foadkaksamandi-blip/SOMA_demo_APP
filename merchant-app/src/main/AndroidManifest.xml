@@ -1,15 +1,22 @@
+<!-- مانیفست اپ فروشنده (Merchant) -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- BLE permissions (Android 12+) -->
-    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
-    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
-    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" android:usesPermissionFlags="neverForLocation"/>
-
-    <!-- برای سازگاری با نسخه‌های قدیمی‌تر -->
+    <!-- بلوتوث و مکان (برای سازگاری با نسخه‌های قدیمی‌تر اندروید) -->
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
-    <uses-feature android:name="android.hardware.bluetooth_le" android:required="true"/>
+    <!-- اندروید 12 به بعد -->
+    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_SCAN"
+        android:usesPermissionFlags="neverForLocation" />
+
+    <!-- BLE اختیاری (اگر می‌خواهید فقط دستگاه‌های BLE اجازه نصب داشته باشند required را true کنید) -->
+    <uses-feature
+        android:name="android.hardware.bluetooth_le"
+        android:required="false" />
 
     <application
         android:allowBackup="true"
