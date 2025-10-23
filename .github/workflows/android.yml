@@ -14,34 +14,39 @@ jobs:
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
-          distribution: 'temurin'
+          distribution: temurin
+          java-version: "17"
 
-      - name: Force Install Gradle 8.7
+      # با Gradle 8.7 واقعی، wrapper نسخه 8.7 را تولید می‌کنیم
+      - name: Generate Gradle Wrapper with Gradle 8.7 (if missing)
+        shell: bash
         run: |
-          wget https://services.gradle.org/distributions/gradle-8.7-bin.zip -O gradle-8.7-bin.zip
-          unzip gradle-8.7-bin.zip -d /opt/gradle
-          export PATH=/opt/gradle/gradle-8.7/bin:$PATH
-          gradle --version
+          if [ ! -f "./gradlew" ]; then
+            echo "Gradle wrapper not found. Downloading Gradle 8.7 to generate it..."
+            curl -L -o ${RUNNER_TEMP}/gradle-8.7-bin.zip https://services.gradle.org/distributions/gradle-8.7-bin.zip
+            unzip -q ${RUNNER_TEMP}/gradle-8.7-bin.zip -d ${RUNNER_TEMP}
+            ${RUNNER_TEMP}/gradle-8.7/bin/gradle -p . wrapper --gradle-version 8.7 --distribution-type all
+            chmod +x ./gradlew
+          else
+            echo "Gradle wrapper exists."
+          fi
 
-      - name: Generate Gradle Wrapper
-        run: |
-          gradle wrapper --gradle-version 8.7
-          chmod +x ./gradlew
+      - name: Verify Gradle version
+        run: ./gradlew --version
 
       - name: Build Consumer & Merchant Debug
-        run: |
-          ./gradlew --version
-          ./gradlew :consumer-app:assembleDebug :merchant-app:assembleDebug --stacktrace
+        run: ./gradlew :consumer-app:assembleDebug :merchant-app:assembleDebug --stacktrace
 
-      - name: Upload Consumer APK
+      - name: Upload Consumer APK(s)
         uses: actions/upload-artifact@v4
         with:
-          name: consumer-app-debug
+          name: consumer-debug-apk
           path: consumer-app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
 
-      - name: Upload Merchant APK
+      - name: Upload Merchant APK(s)
         uses: actions/upload-artifact@v4
         with:
-          name: merchant-app-debug
+          name: merchant-debug-apk
           path: merchant-app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
