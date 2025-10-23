@@ -1,43 +1,78 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="24dp"
+    android:orientation="vertical"
     android:gravity="center_horizontal"
-    android:background="#121212">
+    android:padding="24dp"
+    android:background="#121016"
+    tools:context=".MainActivity">
 
     <TextView
-        android:id="@+id/txtStatus"
-        android:text="وضعیت آماده"
-        android:textColor="#FFFFFF"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="SOMA — اپ خریدار (BLE + QR)"
+        android:textColor="#E6E0FF"
         android:textSize="18sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="16dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="موجودی (تومان):"
+        android:textColor="#CFC3FF"
+        android:textSize="16sp"
+        android:layout_marginBottom="4dp" />
+
+    <TextView
+        android:id="@+id/tvBalance"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="0"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:gravity="center_horizontal"
         android:layout_marginBottom="24dp" />
 
     <Button
         android:id="@+id/btnScanQR"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:text="اسکن QR"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:backgroundTint="#BB86FC"
-        android:textColor="#FFFFFF"
-        android:layout_marginBottom="16dp" />
+        android:textAllCaps="false"
+        android:backgroundTint="#C4A5FF"
+        android:textColor="#000000"
+        android:layout_marginBottom="12dp" />
 
     <Button
-        android:id="@+id/btnBleStart"
+        android:id="@+id/btnScanBLE"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:text="شروع BLE"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:backgroundTint="#BB86FC"
-        android:textColor="#FFFFFF"
-        android:layout_marginBottom="16dp" />
+        android:textAllCaps="false"
+        android:backgroundTint="#C4A5FF"
+        android:textColor="#000000"
+        android:layout_marginBottom="12dp" />
 
     <Button
-        android:id="@+id/btnBleStop"
-        android:text="توقف BLE"
+        android:id="@+id/btnStopBLE"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:backgroundTint="#BB86FC"
-        android:textColor="#FFFFFF" />
+        android:text="توقف BLE"
+        android:textAllCaps="false"
+        android:backgroundTint="#C4A5FF"
+        android:textColor="#000000"
+        android:layout_marginBottom="24dp" />
+
+    <TextView
+        android:id="@+id/tvStatus"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="وضعیت: آماده"
+        android:textColor="#CFC3FF"
+        android:textSize="14sp"
+        android:gravity="end" />
 
 </LinearLayout>
