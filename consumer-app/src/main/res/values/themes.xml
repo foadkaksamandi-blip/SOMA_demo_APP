@@ -1,3 +1,14 @@
-<resources>
-    <style name="Theme.Soma.Consumer" parent="Theme.Material3.DayNight.NoActionBar"/>
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- تم اصلی اپ خریدار -->
+    <style name="Theme.Soma_Consumer" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- رنگ‌های اصلی -->
+        <item name="colorPrimary">#CA45FF</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="android:statusBarColor">?attr/colorPrimary</item>
+        <item name="android:navigationBarColor">?attr/colorPrimary</item>
+        <item name="android:windowBackground">#121016</item>
+        <item name="android:textColor">#FFFFFF</item>
+    </style>
+
 </resources>
