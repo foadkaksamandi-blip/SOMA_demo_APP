@@ -8,114 +8,123 @@ import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.soma.consumer.ble.BLEClient
-import com.soma.consumer.qr.QrScanner // اگر کلاس QR داری نگه‌ش دار؛ اگر نداری این خط و دکمه‌های QR را حذف کن.
+import com.google.zxing.integration.android.IntentIntegrator
 
 class MainActivity : AppCompatActivity() {
 
-    // Viewها
-    private lateinit var tvStatus: TextView
-    private lateinit var tvResult: TextView
-    private lateinit var btnQr: Button
-    private lateinit var btnStartScan: Button
-    private lateinit var btnStopScan: Button
+    private lateinit var btnScanQR: Button
+    private lateinit var btnBleStart: Button
+    private lateinit var btnBleStop: Button
+    private lateinit var statusTv: TextView
 
-    // سرویس‌ها
-    private lateinit var bleClient: BLEClient
-    private lateinit var qrScanner: QrScanner // اگر QrScanner نداری، این خط و استفاده‌هایش را حذف کن.
+    private val permsBle12p = arrayOf(
+        Manifest.permission.BLUETOOTH_CONNECT,
+        Manifest.permission.BLUETOOTH_SCAN
+    )
+
+    private val permsLegacy = arrayOf(
+        Manifest.permission.ACCESS_FINE_LOCATION
+    )
+
+    private val requestPerms =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
+            // فقط جهت دمو
+            if (result.values.any { it }) {
+                Toast.makeText(this, "مجوزها داده شد", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "مجوز رد شد", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+    private val requestCamera =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            if (granted) startQrScan()
+            else Toast.makeText(this, "مجوز دوربین لازم است", Toast.LENGTH_SHORT).show()
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        tvStatus = findViewById(R.id.tvStatus)
-        tvResult = findViewById(R.id.tvResult)
-        btnQr = findViewById(R.id.btnQr)
-        btnStartScan = findViewById(R.id.btnStartScan)
-        btnStopScan = findViewById(R.id.btnStopScan)
+        btnScanQR = findViewById(R.id.btnScanQR)
+        btnBleStart = findViewById(R.id.btnBleStart)
+        btnBleStop = findViewById(R.id.btnBleStop)
+        statusTv = findViewById(R.id.txtStatus)
 
-        // مجوزها
-        checkAndRequestPerms { initAfterPerms() }
+        btnScanQR.setOnClickListener { ensureCameraThenScan() }
+        btnBleStart.setOnClickListener { startBleDemo() }
+        btnBleStop.setOnClickListener { stopBleDemo() }
     }
 
-    /** بعد از گرفتن مجوزها صدا می‌خورد */
-    private fun initAfterPerms() {
-        bleClient = BLEClient(this)
-        qrScanner = QrScanner(this) // اگر QR نداری، پاک کن.
+    private fun ensureCameraThenScan() {
+        val granted = ContextCompat.checkSelfPermission(
+            this, Manifest.permission.CAMERA
+        ) == PackageManager.PERMISSION_GRANTED
+        if (granted) startQrScan() else requestCamera.launch(Manifest.permission.CAMERA)
+    }
 
-        // دکمه QR
-        btnQr.setOnClickListener {
-            qrScanner.startScan(
-                onResult = { code ->
-                    tvResult.text = "کد: $code"
-                    tvStatus.text = "QR دریافت شد ✅"
-                },
-                onCancel = {
-                    Toast.makeText(this, "اسکن لغو شد", Toast.LENGTH_SHORT).show()
-                }
-            )
-        }
+    private fun startQrScan() {
+        val integrator = IntentIntegrator(this)
+        integrator.setDesiredBarcodeFormats(IntentIntegrator.QR_CODE)
+        integrator.setPrompt("اسکن QR")
+        integrator.setBeepEnabled(false)
+        integrator.setOrientationLocked(false)
+        integrator.initiateScan()
+    }
 
-        // شروع اسکن BLE
-        btnStartScan.setOnClickListener {
-            if (ensureBleReady()) {
-                tvStatus.text = "در حال اسکن BLE ..."
-                bleClient.startScan(
-                    onFound = { deviceOrMsg ->
-                        tvStatus.text = "پیدا شد: $deviceOrMsg"
-                    },
-                    onStop = {
-                        tvStatus.text = "اسکن متوقف شد"
-                    }
-                )
+    @Deprecated("onActivityResult is used by IntentIntegrator for simplicity")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: android.content.Intent?) {
+        val result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data)
+        if (result != null) {
+            if (result.contents != null) {
+                statusTv.text = "نتیجه اسکن: ${result.contents}"
+                Toast.makeText(this, "دریافت شد", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "لغو شد", Toast.LENGTH_SHORT).show()
             }
-        }
-
-        // توقف اسکن BLE
-        btnStopScan.setOnClickListener {
-            bleClient.stopScan {
-                tvStatus.text = "اسکن متوقف شد ⛔"
-            }
+        } else {
+            super.onActivityResult(requestCode, resultCode, data)
         }
     }
 
-    /** بررسی روشن بودن BT و… */
-    private fun ensureBleReady(): Boolean {
+    private fun startBleDemo() {
+        ensureBlePerms()
         val adapter = BluetoothAdapter.getDefaultAdapter()
         if (adapter == null) {
-            Toast.makeText(this, "بلوتوث در دسترس نیست", Toast.LENGTH_SHORT).show()
-            return false
+            Toast.makeText(this, "BLE پشتیبانی نمی‌شود", Toast.LENGTH_SHORT).show()
+            return
         }
         if (!adapter.isEnabled) {
             Toast.makeText(this, "بلوتوث خاموش است", Toast.LENGTH_SHORT).show()
-            return false
+        } else {
+            // اینجا بعداً اسکن واقعی BLE را اضافه می‌کنیم
+            Toast.makeText(this, "BLE (خریدار) شروع شد (دمو)", Toast.LENGTH_SHORT).show()
+            statusTv.text = "وضعیت: BLE شروع شد"
         }
-        return true
     }
 
-    /** درخواست مجوزها (برای APIهای مختلف) */
-    private fun checkAndRequestPerms(after: () -> Unit) {
-        val need = mutableListOf<String>()
+    private fun stopBleDemo() {
+        // اینجا بعداً توقف اسکن واقعی را اضافه می‌کنیم
+        Toast.makeText(this, "BLE متوقف شد (دمو)", Toast.LENGTH_SHORT).show()
+        statusTv.text = "وضعیت: BLE متوقف شد"
+    }
+
+    private fun ensureBlePerms() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            if (!has(Manifest.permission.BLUETOOTH_SCAN)) need += Manifest.permission.BLUETOOTH_SCAN
-            if (!has(Manifest.permission.BLUETOOTH_CONNECT)) need += Manifest.permission.BLUETOOTH_CONNECT
+            if (!permsBle12p.all {
+                    ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
+                }) {
+                requestPerms.launch(permsBle12p)
+            }
         } else {
-            if (!has(Manifest.permission.ACCESS_FINE_LOCATION)) need += Manifest.permission.ACCESS_FINE_LOCATION
-        }
-        if (!has(Manifest.permission.CAMERA)) need += Manifest.permission.CAMERA
-
-        if (need.isEmpty()) {
-            after()
-        } else {
-            ActivityCompat.requestPermissions(this, need.toTypedArray(), 200)
-            // after() بعد از onRequestPermissionsResult صدا بزن اگر لازم شد.
-            after() // اگر می‌خواهی ساده بگیری و همان لحظه ادامه بدهی
+            if (!permsLegacy.all {
+                    ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
+                }) {
+                requestPerms.launch(permsLegacy)
+            }
         }
     }
-
-    private fun has(p: String): Boolean =
-        ContextCompat.checkSelfPermission(this, p) == PackageManager.PERMISSION_GRANTED
 }
