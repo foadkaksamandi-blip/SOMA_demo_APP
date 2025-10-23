@@ -1,10 +1,3 @@
 <resources>
-    <!-- تم حرفه‌ای بانکی با رنگ‌های سبز و کنتراست بالا -->
-    <style name="SomaConsumerTheme" parent="Theme.Material3.Light.NoActionBar">
-        <item name="colorPrimary">#059669</item>
-        <item name="colorPrimaryContainer">#0B7F58</item>
-        <item name="colorSecondary">#0F172A</item>
-        <item name="android:statusBarColor">#0B7F58</item>
-        <item name="android:navigationBarColor">#0B7F58</item>
-    </style>
+    <style name="Theme.Soma.Consumer" parent="Theme.Material3.DayNight.NoActionBar"/>
 </resources>
