@@ -1,11 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.SOMA.Merchant" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- رنگ‌های پایه؛ اگر فایل رنگ داری، مطابق آن‌ها بگذار -->
-        <item name="colorPrimary">@android:color/holo_blue_dark</item>
-        <item name="colorSecondary">@android:color/holo_green_dark</item>
-        <item name="android:statusBarColor">?attr/colorPrimary</item>
-        <!-- فونت/دایرکشن اختیاری -->
-        <item name="android:forceDarkAllowed">true</item>
-    </style>
+    <style name="Theme.Soma.Merchant" parent="Theme.Material3.DayNight.NoActionBar"/>
 </resources>
