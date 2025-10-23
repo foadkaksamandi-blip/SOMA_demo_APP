@@ -3,119 +3,132 @@ package com.soma.merchant
 import android.Manifest
 import android.bluetooth.BluetoothAdapter
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.os.Build
 import android.os.Bundle
-import android.widget.*
+import android.widget.Button
+import android.widget.EditText
+import android.widget.ImageView
+import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.soma.merchant.ble.BLEPeripheralService
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.EncodeHintType
+import com.google.zxing.qrcode.QRCodeWriter
+import java.util.EnumMap
 
 class MainActivity : AppCompatActivity() {
 
-    // View ها
-    private lateinit var tvStatus: TextView
-    private lateinit var edtAmount: EditText
-    private lateinit var btnGenQr: Button
-    private lateinit var imgQr: ImageView
-    private lateinit var btnStartBle: Button
-    private lateinit var btnStopBle: Button
+    private lateinit var amountEt: EditText
+    private lateinit var btnGenerateQR: Button
+    private lateinit var btnBleStart: Button
+    private lateinit var btnBleStop: Button
+    private lateinit var statusTv: TextView
 
-    // سرویس BLE (بعد از اجازه ساخته می‌شود)
-    private var ble: BLEPeripheralService? = null
+    private val BLE_PERMS_12P = arrayOf(
+        Manifest.permission.BLUETOOTH_CONNECT,
+        Manifest.permission.BLUETOOTH_ADVERTISE
+    )
+    private val BLE_PERMS_LEGACY = arrayOf(
+        Manifest.permission.ACCESS_FINE_LOCATION
+    )
+    private val REQ_BLE = 1001
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        tvStatus = findViewById(R.id.tvStatus)
-        edtAmount = findViewById(R.id.edtAmount)
-        btnGenQr = findViewById(R.id.btnGenQr)
-        imgQr = findViewById(R.id.ivQr)
-        btnStartBle = findViewById(R.id.btnStartBle)
-        btnStopBle = findViewById(R.id.btnStopBle)
+        amountEt = findViewById(R.id.editAmount)
+        btnGenerateQR = findViewById(R.id.btnGenerateQR)
+        btnBleStart = findViewById(R.id.btnBleStart)
+        btnBleStop = findViewById(R.id.btnBleStop)
+        statusTv = findViewById(R.id.txtStatus)
 
-        // اجازه‌ها سپس init
-        checkAndRequestPerms { initAfterPerms() }
+        btnGenerateQR.setOnClickListener { onGenerateQR() }
+        btnBleStart.setOnClickListener { startBleDemo() }
+        btnBleStop.setOnClickListener { stopBleDemo() }
+    }
 
-        btnGenQr.setOnClickListener {
-            val amount = edtAmount.text.toString()
-            if (amount.isEmpty()) {
-                Toast.makeText(this, "مبلغ را وارد کنید", Toast.LENGTH_SHORT).show()
-            } else {
-                // این‌جا QR تولید کن (فعلاً فقط پیام):
-                tvStatus.text = "QR ایجاد شد برای مبلغ $amount"
-                // اگر کلاس تولید QR داری این‌جا تصویر را در imgQr بگذار.
+    private fun onGenerateQR() {
+        val amount = amountEt.text.toString().trim()
+        if (amount.isEmpty()) {
+            Toast.makeText(this, "مبلغ را وارد کنید", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val payload = "SOMA|MERCHANT|AMOUNT=$amount"
+        val bitmap = makeQrBitmap(payload)
+        showQrDialog(bitmap)
+        statusTv.text = "وضعیت: QR تولید شد"
+    }
+
+    private fun makeQrBitmap(text: String, size: Int = 640): Bitmap {
+        val writer = QRCodeWriter()
+        val hints = EnumMap<EncodeHintType, Any>(EncodeHintType::class.java)
+        hints[EncodeHintType.MARGIN] = 1
+        val bitMatrix = writer.encode(text, BarcodeFormat.QR_CODE, size, size, hints)
+        val bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        for (x in 0 until size) {
+            for (y in 0 until size) {
+                bmp.setPixel(x, y, if (bitMatrix[x, y]) 0xFF000000.toInt() else 0xFFFFFFFF.toInt())
             }
         }
-
-        btnStartBle.setOnClickListener {
-            if (ensureBleReady()) {
-                ble?.startAdvertising(this)
-                tvStatus.text = "BLE فعال شد ✅"
-            }
-        }
-
-        btnStopBle.setOnClickListener {
-            ble?.stopAdvertising()
-            tvStatus.text = "BLE متوقف شد 🛑"
-        }
+        return bmp
     }
 
-    private fun initAfterPerms() {
-        try {
-            ble = BLEPeripheralService()
-        } catch (t: Throwable) {
-            Toast.makeText(this, "Init error: ${t.message}", Toast.LENGTH_LONG).show()
-        }
+    private fun showQrDialog(bmp: Bitmap) {
+        val iv = ImageView(this).apply { setImageBitmap(bmp) }
+        AlertDialog.Builder(this)
+            .setTitle("QR خرید")
+            .setView(iv)
+            .setPositiveButton("بستن", null)
+            .show()
     }
 
-    private fun checkAndRequestPerms(onGranted: () -> Unit) {
-        val needs = mutableListOf<String>()
-
-        if (Build.VERSION.SDK_INT >= 31) {
-            needs += listOf(
-                Manifest.permission.BLUETOOTH_SCAN,
-                Manifest.permission.BLUETOOTH_CONNECT,
-                Manifest.permission.BLUETOOTH_ADVERTISE
-            )
-        } else {
-            needs += Manifest.permission.ACCESS_FINE_LOCATION
+    private fun startBleDemo() {
+        if (!hasBlePerms()) {
+            requestBlePerms()
+            return
         }
-        needs += Manifest.permission.CAMERA
-
-        val toAsk = needs.filter {
-            ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
-        }
-
-        if (toAsk.isEmpty()) onGranted()
-        else ActivityCompat.requestPermissions(this, toAsk.toTypedArray(), 201)
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == 201 && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
-            initAfterPerms()
-        } else {
-            Toast.makeText(this, "اجازه‌ها لازم‌اند", Toast.LENGTH_LONG).show()
-        }
-    }
-
-    private fun ensureBleReady(): Boolean {
         val adapter = BluetoothAdapter.getDefaultAdapter()
         if (adapter == null) {
-            Toast.makeText(this, "بلوتوث در دسترس نیست", Toast.LENGTH_SHORT).show()
-            return false
+            Toast.makeText(this, "BLE در این دستگاه پشتیبانی نمی‌شود", Toast.LENGTH_SHORT).show()
+            return
         }
-        return true
+        if (!adapter.isEnabled) {
+            Toast.makeText(this, "بلوتوث خاموش است", Toast.LENGTH_SHORT).show()
+        } else {
+            // اینجا بعداً تبلیغ BLE واقعی را اضافه می‌کنیم
+            Toast.makeText(this, "BLE (فروشنده) شروع شد (دمو)", Toast.LENGTH_SHORT).show()
+            statusTv.text = "وضعیت: BLE شروع شد"
+        }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        ble?.stopAdvertising()
+    private fun stopBleDemo() {
+        // اینجا بعداً توقف تبلیغ BLE واقعی را اضافه می‌کنیم
+        Toast.makeText(this, "BLE متوقف شد (دمو)", Toast.LENGTH_SHORT).show()
+        statusTv.text = "وضعیت: BLE متوقف شد"
+    }
+
+    private fun hasBlePerms(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            BLE_PERMS_12P.all {
+                ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
+            }
+        } else {
+            BLE_PERMS_LEGACY.all {
+                ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
+            }
+        }
+    }
+
+    private fun requestBlePerms() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            ActivityCompat.requestPermissions(this, BLE_PERMS_12P, REQ_BLE)
+        } else {
+            ActivityCompat.requestPermissions(this, BLE_PERMS_LEGACY, REQ_BLE)
+        }
     }
 }
