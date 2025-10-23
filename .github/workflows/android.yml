@@ -17,7 +17,14 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Generate Gradle Wrapper (if missing)
+      - name: Force Install Gradle 8.7
+        run: |
+          wget https://services.gradle.org/distributions/gradle-8.7-bin.zip -O gradle-8.7-bin.zip
+          unzip gradle-8.7-bin.zip -d /opt/gradle
+          export PATH=/opt/gradle/gradle-8.7/bin:$PATH
+          gradle --version
+
+      - name: Generate Gradle Wrapper
         run: |
           gradle wrapper --gradle-version 8.7
           chmod +x ./gradlew
