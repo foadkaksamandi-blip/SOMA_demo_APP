@@ -1,3 +1,13 @@
-<resources>
-    <style name="Theme.Soma.Merchant" parent="Theme.Material3.DayNight.NoActionBar"/>
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- تم اصلی اپ فروشنده -->
+    <style name="Theme.Soma_Merchant" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">#7B5FFF</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="android:statusBarColor">?attr/colorPrimary</item>
+        <item name="android:navigationBarColor">?attr/colorPrimary</item>
+        <item name="android:windowBackground">#F9F3FF</item>
+        <item name="android:textColor">#000000</item>
+    </style>
+
 </resources>
