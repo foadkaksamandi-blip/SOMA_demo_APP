@@ -17,7 +17,7 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      # با Gradle 8.7 واقعی، wrapper نسخه 8.7 را تولید می‌کنیم
+      # اگر gradlew وجود ندارد، Gradle 8.7 را دانلود و wrapper را می‌سازد
       - name: Generate Gradle Wrapper with Gradle 8.7 (if missing)
         shell: bash
         run: |
@@ -28,11 +28,14 @@ jobs:
             ${RUNNER_TEMP}/gradle-8.7/bin/gradle -p . wrapper --gradle-version 8.7 --distribution-type all
             chmod +x ./gradlew
           else
-            echo "Gradle wrapper exists."
+            echo "Gradle wrapper already exists."
+            chmod +x ./gradlew
           fi
 
       - name: Verify Gradle version
-        run: ./gradlew --version
+        run: |
+          chmod +x ./gradlew
+          ./gradlew --version
 
       - name: Build Consumer & Merchant Debug
         run: ./gradlew :consumer-app:assembleDebug :merchant-app:assembleDebug --stacktrace
