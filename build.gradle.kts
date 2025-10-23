@@ -1,11 +1,13 @@
+// Top-level build file for SOMA_demo_APP
+
 plugins {
-    id("com.android.application") version "8.7.2" apply false
-    id("org.jetbrains.kotlin.android") version "1.9.22" apply false
+    id("com.android.application") version "8.7.0" apply false
+    kotlin("android") version "1.9.24" apply false
 }
 
-allprojects {
-    repositories {
-        google()
-        mavenCentral()
-    }
+// هیچ repositoriesاینجا نگذار—مخازن فقط در settings.gradle.kts تعریف شوند.
+
+tasks.register<Delete>("clean") {
+    delete(rootProject.layout.buildDirectory)
 }
+```0
