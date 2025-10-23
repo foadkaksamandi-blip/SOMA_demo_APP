@@ -1,7 +1,18 @@
 package com.soma.consumer.ble
 
 import android.annotation.SuppressLint
-import android.bluetooth.*
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothGatt
+import android.bluetooth.BluetoothGattCallback
+import android.bluetooth.BluetoothGattCharacteristic
+import android.bluetooth.BluetoothManager
+import android.bluetooth.BluetoothProfile
+import android.bluetooth.le.BluetoothLeScanner
+import android.bluetooth.le.ScanCallback
+import android.bluetooth.le.ScanFilter
+import android.bluetooth.le.ScanResult
+import android.bluetooth.le.ScanSettings
 import android.content.Context
 import android.os.Build
 import android.os.Handler
@@ -11,8 +22,8 @@ import android.util.Log
 import java.util.*
 
 /**
- * BLE Client — اسکن، اتصال، و خواندن داده از دستگاه فروشنده (Notify/Read)
- * برای ارتباط امن بین اپ خریدار و فروشنده
+ * BLE Client — مسئول اسکن، اتصال، و خواندن داده از BLE فروشنده
+ * برای انتقال داده امن بین اپ خریدار و فروشنده
  */
 
 class BleClient(private val context: Context) {
@@ -36,7 +47,7 @@ class BleClient(private val context: Context) {
     private val main = Handler(Looper.getMainLooper())
     private var timeoutPosted = false
 
-    /** بررسی اولیه‌ی وضعیت بلوتوث */
+    /** بررسی فعال بودن بلوتوث */
     fun isReady(): Boolean {
         val ad = adapter ?: return false
         if (!ad.isEnabled) return false
@@ -44,7 +55,7 @@ class BleClient(private val context: Context) {
         return true
     }
 
-    /** شروع اسکن و جستجو برای سرویس BLE فروشنده */
+    /** شروع اسکن دستگاه فروشنده */
     @SuppressLint("MissingPermission")
     fun startScan(onFound: (String) -> Unit, onStop: () -> Unit) {
         val ad = adapter ?: run {
@@ -105,9 +116,13 @@ class BleClient(private val context: Context) {
         onStop()
     }
 
-    /** اتصال به دستگاه پیدا شده */
+    /** اتصال به دستگاه فروشنده */
     @SuppressLint("MissingPermission")
-    private fun connectToDevice(device: BluetoothDevice, onFound: (String) -> Unit, onStop: () -> Unit) {
+    private fun connectToDevice(
+        device: BluetoothDevice,
+        onFound: (String) -> Unit,
+        onStop: () -> Unit
+    ) {
         onFound("در حال اتصال به ${device.name ?: "Unknown"}...")
 
         gatt = device.connectGatt(context, false, object : BluetoothGattCallback() {
@@ -143,7 +158,7 @@ class BleClient(private val context: Context) {
         })
     }
 
-    /** توقف کامل ارتباط */
+    /** قطع ارتباط */
     @SuppressLint("MissingPermission")
     fun stopConnection(onStop: () -> Unit) {
         gatt?.disconnect()
