@@ -12,7 +12,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -35,13 +35,13 @@ jobs:
         run: flutter build apk --debug --target lib/merchant_main.dart
 
       - name: Upload Consumer APK(s)
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: consumer-app
           path: build/app/outputs/flutter-apk/app-debug.apk
 
       - name: Upload Merchant APK(s)
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: merchant-app
           path: build/app/outputs/flutter-apk/app-debug.apk
