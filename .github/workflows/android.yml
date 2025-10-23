@@ -4,6 +4,7 @@ on:
   push:
     branches: [ main ]
   pull_request:
+  workflow_dispatch:  # فعال کردن دکمه Run workflow در تب Actions
 
 jobs:
   build:
@@ -19,11 +20,16 @@ jobs:
           java-version: 17
           distribution: temurin
 
-      - name: Grant execute permission for Gradlew
-        run: chmod +x ./gradlew
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          cache-disabled: false
+          gradle-version: 8.7
 
       - name: Build Consumer & Merchant Debug
-        run: ./gradlew :consumer-app:assembleDebug :merchant-app:assembleDebug --stacktrace
+        run: |
+          gradle --version
+          gradle :consumer-app:assembleDebug :merchant-app:assembleDebug --stacktrace
 
       - name: Upload Consumer APK
         uses: actions/upload-artifact@v4
