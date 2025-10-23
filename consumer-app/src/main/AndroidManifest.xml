@@ -1,21 +1,14 @@
-<!-- مانیفست اپ خریدار (Consumer) -->
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.soma.consumer">
 
-    <!-- بلوتوث و مکان (برای سازگاری با نسخه‌های قدیمی‌تر اندروید) -->
+    <!-- مجوزهای مورد نیاز QR و BLE -->
+    <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-
-    <!-- اندروید 12 به بعد -->
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
-    <uses-permission
-        android:name="android.permission.BLUETOOTH_SCAN"
-        android:usesPermissionFlags="neverForLocation" />
-
-    <!-- BLE اختیاری -->
-    <uses-feature
-        android:name="android.hardware.bluetooth_le"
-        android:required="false" />
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
     <application
         android:allowBackup="true"
@@ -36,4 +29,3 @@
 
     </application>
 </manifest>
-```0
