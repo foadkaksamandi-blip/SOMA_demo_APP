@@ -1,10 +1,15 @@
 package com.soma.merchant
 
+import android.Manifest
+import android.os.Build
 import android.os.Bundle
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
+import android.content.pm.PackageManager
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 import com.soma.merchant.ble.BlePeripheralService
@@ -18,8 +23,40 @@ class MainActivity : AppCompatActivity() {
     private lateinit var ivQR: ImageView
     private lateinit var btnGenerateQR: Button
     private lateinit var btnStartBLE: Button
+    private lateinit var btnStopBLE: Button
 
-    private var amount = 200000
+    // ---- permissions (advertise/connect) ----
+    private val permsForAdv: Array<String> by lazy {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            arrayOf(
+                Manifest.permission.BLUETOOTH_ADVERTISE,
+                Manifest.permission.BLUETOOTH_CONNECT
+            )
+        } else {
+            // برای تبلیغ روی <12 معمولاً پرمیشن زمان اجرا لازم نیست
+            emptyArray()
+        }
+    }
+
+    private val requestBlePerms =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { grants ->
+            val granted = permsForAdv.all { p ->
+                grants[p] == true || ContextCompat.checkSelfPermission(this, p) == PackageManager.PERMISSION_GRANTED
+            }
+            if (granted) {
+                startBleInternal()
+            } else {
+                tvStatus.text = "اجازه BLE داده نشد"
+            }
+        }
+
+    private fun ensureBlePermissions(onGranted: () -> Unit) {
+        val need = permsForAdv.filter {
+            ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
+        }
+        if (need.isEmpty()) onGranted() else requestBlePerms.launch(permsForAdv)
+    }
+    // -----------------------------------------
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,15 +67,38 @@ class MainActivity : AppCompatActivity() {
         ivQR = findViewById(R.id.ivQR)
         btnGenerateQR = findViewById(R.id.btnGenerateQR)
         btnStartBLE = findViewById(R.id.btnStartBLE)
+        btnStopBLE = findViewById(R.id.btnStopBLE)
 
-        tvAmount.text = amount.toString()
+        tvAmount.text = "200000"
+        tvStatus.text = "آماده"
 
         btnGenerateQR.setOnClickListener { generateQR() }
-        btnStartBLE.setOnClickListener { startBLE() }
+        btnStartBLE.setOnClickListener { ensureBlePermissions { startBleInternal() } }
+        btnStopBLE.setOnClickListener {
+            bleService.stopAdvertising()
+            tvStatus.text = "BLE متوقف شد"
+        }
+    }
+
+    private fun startBleInternal() {
+        // می‌تونی این payload رو هرچی لازم داری بسازی
+        val payload = "SOMA|TX|${System.currentTimeMillis()}".toByteArray()
+
+        if (!bleService.isReady(this)) {
+            tvStatus.text = "این دستگاه BLE Peripheral را پشتیبانی نمی‌کند/اجازه ندارد"
+            return
+        }
+
+        bleService.startAdvertising(
+            context = this,
+            payload = payload,
+            onStart = { runOnUiThread { tvStatus.text = "فعال شد و در حال انتشار است BLE" } },
+            onFail = { code -> runOnUiThread { tvStatus.text = "خطای BLE: $code" } }
+        )
     }
 
     private fun generateQR() {
-        val content = "SOMA|TX|$amount|${System.currentTimeMillis()}"
+        val content = "SOMA|TX|${System.currentTimeMillis()}"
         val writer = QRCodeWriter()
         val bitMatrix = writer.encode(content, BarcodeFormat.QR_CODE, 600, 600)
         val bmp = android.graphics.Bitmap.createBitmap(600, 600, android.graphics.Bitmap.Config.RGB_565)
@@ -48,20 +108,11 @@ class MainActivity : AppCompatActivity() {
             }
         }
         ivQR.setImageBitmap(bmp)
-        tvStatus.text = "وضعیت: QR ساخته شد"
+        tvStatus.text = "QR ساخته شد"
     }
 
-    private fun startBLE() {
-        val payload = "SOMA|TX|$amount".toByteArray()
-        if (!bleService.isReady(this)) {
-            tvStatus.text = "BLE در این دستگاه در دسترس نیست"
-            return
-        }
-        bleService.startAdvertising(
-            context = this,
-            payload = payload,
-            onStart = { runOnUiThread { tvStatus.text = "BLE فعال شد و در حال انتشار است" } },
-            onFail = { code -> runOnUiThread { tvStatus.text = "خطای BLE ($code)" } }
-        )
+    override fun onDestroy() {
+        super.onDestroy()
+        bleService.stopAdvertising()
     }
 }
