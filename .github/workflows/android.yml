@@ -15,38 +15,40 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "17"
+          java-version: '17'
 
-      - name: Prepare Gradle Wrapper (force create if missing)
-        shell: bash
+      # اکشن رسمی گرادل (سیستم گرادل را فراهم می‌کند)
+      - name: Setup Gradle (tool + cache)
+        uses: gradle/actions/setup-gradle@v3
+
+      # اگر jar نبود، wrapper را می‌سازد (با مسیر درست gradle/wrapper)
+      - name: Prepare Gradle Wrapper (create if missing)
         run: |
-          if [ ! -f "./gradlew" ]; then
-            echo "Gradle wrapper not found — generating..."
-            curl -L -o ${RUNNER_TEMP}/gradle-8.7-bin.zip https://services.gradle.org/distributions/gradle-8.7-bin.zip
-            unzip -q ${RUNNER_TEMP}/gradle-8.7-bin.zip -d ${RUNNER_TEMP}
-            ${RUNNER_TEMP}/gradle-8.7/bin/gradle wrapper --gradle-version 8.7 --distribution-type all
+          if [ ! -f "gradle/wrapper/gradle-wrapper.jar" ]; then
+            echo "Gradle wrapper JAR missing. Generating..."
+            gradle wrapper --gradle-version 8.7
           fi
-          chmod +x ./gradlew
-          ls -R gradle/wrapper || true
+
+      # دسترسی اجرایی به اسکریپت‌های wrapper
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
 
       - name: Verify Gradle version
-        run: |
-          chmod +x ./gradlew
-          ./gradlew --version
+        run: ./gradlew --version
 
+      # بیلد هر دو ماژول در حالت Debug
       - name: Build Consumer & Merchant Debug
         run: ./gradlew :consumer-app:assembleDebug :merchant-app:assembleDebug --stacktrace
 
+      # آپلود خروجی‌ها به آرتیفکت
       - name: Upload Consumer APK(s)
         uses: actions/upload-artifact@v4
         with:
-          name: consumer-debug-apk
+          name: consumer-apks
           path: consumer-app/build/outputs/apk/debug/*.apk
-          if-no-files-found: error
 
       - name: Upload Merchant APK(s)
         uses: actions/upload-artifact@v4
         with:
-          name: merchant-debug-apk
+          name: merchant-apks
           path: merchant-app/build/outputs/apk/debug/*.apk
-          if-no-files-found: error
