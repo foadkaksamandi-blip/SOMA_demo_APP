@@ -3,6 +3,13 @@ plugins {
     id("org.jetbrains.kotlin.android") version "1.9.22" apply false
 }
 
+subprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
 tasks.register<Delete>("clean") {
     delete(rootProject.buildDir)
 }
