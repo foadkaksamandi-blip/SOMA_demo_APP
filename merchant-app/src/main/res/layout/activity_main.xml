@@ -5,50 +5,19 @@
     android:orientation="vertical"
     android:padding="24dp">
 
-    <TextView
-        android:id="@+id/tvAmount"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="0"
-        android:textSize="28sp"
-        android:layout_gravity="center_horizontal"
-        android:paddingTop="32dp"
-        android:paddingBottom="12dp" />
-
-    <TextView
-        android:id="@+id/tvStatus"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="در انتظار..."
-        android:textSize="18sp"
-        android:layout_gravity="center_horizontal"
-        android:paddingBottom="24dp" />
-
-    <Button
-        android:id="@+id/btnScanQR"
+    <ImageView
+        android:id="@+id/ivQr"
         android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:text="@string/scan_qr" />
-
-    <Button
-        android:id="@+id/btnStartBLE"
-        android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:text="@string/start_ble"
-        android:layout_marginTop="12dp" />
-
-    <Button
-        android:id="@+id/btnStopBLE"
-        android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:text="@string/stop_ble"
-        android:layout_marginTop="12dp" />
+        android:layout_height="240dp"
+        android:adjustViewBounds="true"
+        android:scaleType="fitCenter"
+        android:contentDescription="@string/app_name"
+        android:background="#EEEEEE" />
 
     <Button
         android:id="@+id/btnGenerateQr"
         android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:text="ساخت QR جدید"
-        android:layout_marginTop="12dp" />
-
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="ساخت QR جدید" />
 </LinearLayout>
