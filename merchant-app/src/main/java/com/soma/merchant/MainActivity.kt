@@ -47,17 +47,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startBLE() {
-        // تبلیغ (Advertise) به عنوان فروشنده
         if (!Perms.ensureBleAdvertise(this)) {
             tvStatus.text = "مجوزهای BLE کامل نیست"
             return
         }
         val payload = "SOMA|TX|$amount".toByteArray()
-
         bleService.startAdvertising(
             context = this,
             payload = payload,
-            onStart = { runOnUiThread { tvStatus.text = "فعال شد و در حال انتشار BLE است" } },
+            onStart = { runOnUiThread { tvStatus.text = "BLE فعال و در حال انتشار است" } },
             onFail = { code -> runOnUiThread { tvStatus.text = "خطای BLE: $code" } }
         )
     }
