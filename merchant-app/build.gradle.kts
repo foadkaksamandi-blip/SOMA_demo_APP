@@ -1,66 +1,61 @@
 plugins {
-    id("com.android.application")
-    kotlin("android")
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
 }
 
 android {
-    namespace = "com.soma.merchant"
-    compileSdk = 34
+    namespace 'com.soma.merchant'
+    compileSdk 34
 
     defaultConfig {
-        applicationId = "com.soma.merchant"
-        minSdk = 24
-        targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        applicationId "com.soma.merchant"
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         debug {
-            isMinifyEnabled = false
-        }
-    }
-
-    buildFeatures {
-        viewBinding = true
-    }
-
-    packaging {
-        resources {
-            excludes += setOf(
-                "META-INF/DEPENDENCIES",
-                "META-INF/NOTICE",
-                "META-INF/LICENSE",
-                "META-INF/LICENSE.txt",
-                "META-INF/NOTICE.txt"
-            )
+            debuggable true
         }
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
+
     kotlinOptions {
-        jvmTarget = "17"
+        jvmTarget = '17'
+    }
+
+    buildFeatures {
+        viewBinding true
     }
 }
 
 dependencies {
-    implementation("androidx.core:core-ktx:1.13.1")
-    implementation("androidx.appcompat:appcompat:1.7.0")
-    implementation("com.google.android.material:material:1.12.0")
 
-    // تولید QR (با QRHandler از ZXing core استفاده می‌کنیم)
-    implementation("com.google.zxing:core:3.5.2")
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.9.22"
 
-    // اگر در مرچنت هم می‌خواهی اسکن کنی (فعلاً نیاز نیست) می‌توانی این را هم اضافه کنی:
-    // implementation("com.journeyapps:zxing-android-embedded:4.3.0")
+    // AndroidX libraries
+    implementation 'androidx.core:core-ktx:1.12.0'
+    implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'com.google.android.material:material:1.10.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+
+    // Optional QR generation (برای مرحله بعد)
+    implementation 'com.journeyapps:zxing-android-embedded:4.3.0'
+    implementation 'com.google.zxing:core:3.5.1'
+
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
 }
