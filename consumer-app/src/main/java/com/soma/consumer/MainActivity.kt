@@ -6,7 +6,6 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.soma.consumer.ble.BleClient
 import com.soma.shared.utils.Perms
-import com.soma.shared.utils.QRHandler   // اگر پکیج QRHandler شما فرق دارد، همین import را مطابق پروژه‌تان تغییر دهید.
 
 class MainActivity : AppCompatActivity() {
 
@@ -16,8 +15,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnStartBLE: Button
     private lateinit var btnStopBLE: Button
 
-    private var bleClient: BleClient? = null
-    private var balance: Int = -300000  // فقط برای نمایش دمو
+    private val ble by lazy { BleClient(this) }
+    private var amount = -300000
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,39 +28,36 @@ class MainActivity : AppCompatActivity() {
         btnStartBLE = findViewById(R.id.btnStartBLE)
         btnStopBLE = findViewById(R.id.btnStopBLE)
 
-        tvAmount.text = balance.toString()
+        tvAmount.text = amount.toString()
         tvStatus.text = "آماده"
 
-        // --- QR Scan (دقیقا میره سراغ اسکنر قبلی خودت) ---
         btnScanQR.setOnClickListener {
-            if (!Perms.ensureCamera(this)) return@setOnClickListener
-            QRHandler.startScan(this) { resultText ->
-                // اینجا همان منطق مرحلهٔ QR قبلی‌ات را صدا بزن
-                tvStatus.text = "QR: $resultText"
-            }
+            // اسکنر دوربین مرحله بعد اضافه میشه
+            tvStatus.text = "اسکن QR به‌زودی اضافه می‌شود"
         }
 
-        // --- BLE Scan Start ---
         btnStartBLE.setOnClickListener {
             if (!Perms.ensureBleScan(this)) return@setOnClickListener
             tvStatus.text = "در حال جستجو برای دستگاه فروشنده…"
-            if (bleClient == null) bleClient = BleClient(this)
 
-            bleClient?.startScan(
-                onFound = { msg -> runOnUiThread { tvStatus.text = msg } },
-                onStop  = { runOnUiThread { tvStatus.text = "اسکن تمام شد" } }
+            ble.startScan(
+                onFound = { name ->
+                    runOnUiThread { tvStatus.text = "پیدا شد: $name" }
+                },
+                onStop = {
+                    runOnUiThread { tvStatus.text = "اسکن تمام شد" }
+                }
             )
         }
 
-        // --- BLE Scan Stop ---
         btnStopBLE.setOnClickListener {
-            bleClient?.stopScan()
+            ble.stopScan()
             tvStatus.text = "BLE متوقف شد"
         }
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        bleClient?.stopScan()
+        ble.stopScan()
     }
 }
