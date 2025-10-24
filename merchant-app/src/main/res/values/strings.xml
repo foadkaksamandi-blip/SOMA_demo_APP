@@ -1,3 +1,27 @@
+
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">SOMA Merchant Demo</string>
+
+    <!-- نام برنامه -->
+    <string name="app_name">SOMA Merchant</string>
+
+    <!-- متن‌های اصلی UI -->
+    <string name="label_amount">مبلغ خرید</string>
+    <string name="label_status">وضعیت اتصال</string>
+    <string name="label_scan_qr">اسکن QR</string>
+    <string name="label_start_ble">شروع BLE</string>
+    <string name="label_stop_ble">توقف BLE</string>
+
+    <!-- پیام‌های وضعیت -->
+    <string name="status_waiting">در انتظار اتصال...</string>
+    <string name="status_connected">اتصال برقرار شد ✅</string>
+    <string name="status_disconnected">اتصال قطع شد ❌</string>
+    <string name="status_sending">در حال ارسال تراکنش...</string>
+    <string name="status_sent">تراکنش ارسال شد 💰</string>
+
+    <!-- خطاها -->
+    <string name="error_no_bluetooth">بلوتوث فعال نیست!</string>
+    <string name="error_permission_denied">مجوز دسترسی داده نشده!</string>
+    <string name="error_unknown">خطای ناشناخته رخ داد</string>
+
 </resources>
