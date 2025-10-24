@@ -31,12 +31,13 @@ class MainActivity : AppCompatActivity() {
         tvAmount.text = amount.toString()
         tvStatus.text = "آماده"
 
+        // فعلاً فقط پیام نمایشی؛ بعداً اسکن واقعی QR را وصل می‌کنیم
         btnScanQR.setOnClickListener {
-            // اسکنر دوربین مرحله بعد اضافه میشه
             tvStatus.text = "اسکن QR به‌زودی اضافه می‌شود"
         }
 
         btnStartBLE.setOnClickListener {
+            // اجازه‌ها (API 31+ اسکن/کانکت؛ قدیمی‌تر لوکیشن)
             if (!Perms.ensureBleScan(this)) return@setOnClickListener
             tvStatus.text = "در حال جستجو برای دستگاه فروشنده…"
 
@@ -45,7 +46,11 @@ class MainActivity : AppCompatActivity() {
                     runOnUiThread { tvStatus.text = "پیدا شد: $name" }
                 },
                 onStop = {
-                    runOnUiThread { tvStatus.text = "اسکن تمام شد" }
+                    runOnUiThread {
+                        if (tvStatus.text?.startsWith("پیدا شد") != true) {
+                            tvStatus.text = "اسکن تمام شد"
+                        }
+                    }
                 }
             )
         }
