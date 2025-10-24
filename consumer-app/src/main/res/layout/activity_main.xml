@@ -12,38 +12,37 @@
         android:text="0"
         android:textSize="28sp"
         android:layout_gravity="center_horizontal"
-        android:paddingBottom="8dp"
-        android:paddingTop="32dp" />
+        android:paddingTop="32dp"
+        android:paddingBottom="12dp" />
 
     <TextView
         android:id="@+id/tvStatus"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="..."
+        android:text="وضعیت"
+        android:textSize="18sp"
         android:layout_gravity="center_horizontal"
-        android:paddingBottom="16dp"
-        android:textSize="18sp" />
+        android:paddingBottom="24dp" />
 
     <Button
         android:id="@+id/btnScanQR"
         android:layout_width="match_parent"
         android:layout_height="48dp"
-        android:text="اسکن / تولید QR"
-        android:layout_marginTop="8dp" />
+        android:text="اسکن / تولید QR" />
 
     <Button
         android:id="@+id/btnStartBLE"
         android:layout_width="match_parent"
         android:layout_height="48dp"
         android:text="شروع BLE"
-        android:layout_marginTop="8dp" />
+        android:layout_marginTop="12dp" />
 
     <Button
         android:id="@+id/btnStopBLE"
         android:layout_width="match_parent"
         android:layout_height="48dp"
         android:text="توقف BLE"
-        android:layout_marginTop="8dp" />
+        android:layout_marginTop="12dp" />
 
     <ImageView
         android:id="@+id/ivQR"
