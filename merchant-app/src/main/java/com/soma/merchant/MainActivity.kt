@@ -1,67 +1,39 @@
 package com.soma.merchant
 
+import android.graphics.Bitmap
+import android.graphics.Color
 import android.os.Bundle
-import android.widget.Button
-import android.widget.ImageView
-import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import com.soma.merchant.ble.BLEPeripheralService
-import com.soma.merchant.utils.Perms
-import com.soma.merchant.utils.QRHandler
+import com.soma.merchant.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
 
-    private val bleService by lazy { BLEPeripheralService() }
-
-    private lateinit var tvAmount: TextView
-    private lateinit var tvStatus: TextView
-    private lateinit var ivQR: ImageView
-    private lateinit var btnGenerateQR: Button
-    private lateinit var btnStartBLE: Button
-    private lateinit var btnStopBLE: Button
-
-    private var amount = 200000
+    private lateinit var binding: ActivityMainBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
-        tvAmount = findViewById(R.id.tvAmount)
-        tvStatus = findViewById(R.id.tvStatus)
-        ivQR = findViewById(R.id.ivQR)
-        btnGenerateQR = findViewById(R.id.btnGenerateQR)
-        btnStartBLE = findViewById(R.id.btnStartBLE)
-        btnStopBLE = findViewById(R.id.btnStopBLE)
-
-        tvAmount.text = amount.toString()
-
-        btnGenerateQR.setOnClickListener { generateQR() }
-        btnStartBLE.setOnClickListener { startBLE() }
-        btnStopBLE.setOnClickListener { stopBLE() }
-    }
-
-    private fun generateQR() {
-        val payload = "SOMA|TX|$amount|${System.currentTimeMillis()}"
-        QRHandler.renderTo(ivQR, payload)
-        tvStatus.text = "QR ساخته شد"
-    }
-
-    private fun startBLE() {
-        if (!Perms.ensureBleAdvertise(this)) {
-            tvStatus.text = "مجوزهای BLE کامل نیست"
-            return
+        // دکمه ساخت QR
+        binding.btnGenerateQr.setOnClickListener {
+            val data = "SOMA-DEMO"
+            val bmp = generateDummyQr(data)
+            binding.ivQr.setImageBitmap(bmp)
         }
-        val payload = "SOMA|TX|$amount".toByteArray()
-        bleService.startAdvertising(
-            context = this,
-            payload = payload,
-            onStart = { runOnUiThread { tvStatus.text = "BLE فعال و در حال انتشار است" } },
-            onFail = { code -> runOnUiThread { tvStatus.text = "خطای BLE: $code" } }
-        )
     }
 
-    private fun stopBLE() {
-        bleService.stopAdvertising()
-        tvStatus.text = "BLE متوقف شد"
+    /** یک QR سادهٔ نمایشی تا بیلد خطا نده (بعداً می‌تونیم ZXing اضافه کنیم) */
+    private fun generateDummyQr(text: String): Bitmap {
+        val size = 512
+        val bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        // الگوی ساده شطرنجی برای اینکه خروجی دیده شود
+        for (y in 0 until size) {
+            for (x in 0 until size) {
+                val on = ((x / 16) + (y / 16)) % 2 == 0
+                bmp.setPixel(x, y, if (on) Color.BLACK else Color.WHITE)
+            }
+        }
+        return bmp
     }
 }
