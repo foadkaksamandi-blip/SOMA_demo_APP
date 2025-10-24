@@ -16,5 +16,6 @@ dependencyResolutionManagement {
 
 rootProject.name = "SOMA_demo_APP"
 
+// نام ماژول‌ها دقیقاً این‌ها باشند
 include(":consumer-app")
 include(":merchant-app")
