@@ -1,4 +1,4 @@
-package com.soma.shared.utils
+package com.soma.consumer.utils
 
 import android.Manifest
 import android.app.Activity
