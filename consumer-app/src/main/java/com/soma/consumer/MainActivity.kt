@@ -34,8 +34,7 @@ class MainActivity : AppCompatActivity() {
         tvStatus.text = "آماده"
 
         btnScanQR.setOnClickListener {
-            // در صورت نیاز به دوربین، فعلاً فقط QR تولید می‌کنیم تا بیلد سبز شود
-            val content = "SOMA|TX|${amount}|${System.currentTimeMillis()}"
+            val content = "SOMA|TX|$amount|${System.currentTimeMillis()}"
             ivQR.setImageBitmap(QRHandler.generate(content))
             tvStatus.text = "QR ساخته شد"
         }
@@ -44,15 +43,15 @@ class MainActivity : AppCompatActivity() {
             val ok = Perms.ensureBleScan(this)
             if (ok) {
                 tvStatus.text = "در حال جستجو برای دستگاه فروشنده…"
-                // اینجا میتوانی کد BLE واقعی خودت را صدا بزنی
+                // اینجا می‌تونی کد واقعی BLE رو اضافه کنی
             } else {
-                tvStatus.text = "برای BLE، مجوز لازم است"
+                tvStatus.text = "مجوز لازم برای BLE داده نشده"
             }
         }
 
         btnStopBLE.setOnClickListener {
             tvStatus.text = "BLE متوقف شد"
-            // اینجا stop واقعی BLE را فراخوانی کن
+            // اینجا می‌تونی stop واقعی BLE رو بنویسی
         }
     }
 }
