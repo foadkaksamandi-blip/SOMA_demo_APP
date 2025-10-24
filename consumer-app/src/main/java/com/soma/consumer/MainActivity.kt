@@ -5,8 +5,6 @@ import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import com.google.zxing.BarcodeFormat
-import com.google.zxing.qrcode.QRCodeWriter
 import com.soma.consumer.ble.BleClient
 import com.soma.consumer.utils.Perms
 import com.soma.consumer.utils.QRHandler
@@ -33,14 +31,12 @@ class MainActivity : AppCompatActivity() {
         ivQR = findViewById(R.id.ivQR)
         btnScanQR = findViewById(R.id.btnScanQR)
         btnStartBLE = findViewById(R.id.btnStartBLE)
-        btnStopBLE  = findViewById(R.id.btnStopBLE)
+        btnStopBLE = findViewById(R.id.btnStopBLE)
 
         tvAmount.text = amount.toString()
 
-        // اسکن QR (اگر دکمه‌اش در لایه هست)
         btnScanQR.setOnClickListener {
             if (Perms.ensureCamera(this)) {
-                // اگر الان فقط نمایش QR لازم داری، مثال ساخت QR:
                 val data = "SOMA|TX|${System.currentTimeMillis()}"
                 QRHandler.renderTo(ivQR, data)
                 tvStatus.text = "QR ساخته شد"
@@ -57,7 +53,6 @@ class MainActivity : AppCompatActivity() {
             return
         }
         tvStatus.text = "در حال جستجو برای دستگاه فروشنده..."
-
         bleClient.startScan(
             onFound = { msg ->
                 runOnUiThread { tvStatus.text = "پیام از فروشنده: $msg" }
