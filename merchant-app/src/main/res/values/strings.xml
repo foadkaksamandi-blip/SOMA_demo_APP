@@ -1,20 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">SOMA Merchant</string>
-
-    <string name="label_amount">مبلغ خرید</string>
-    <string name="label_status">وضعیت اتصال</string>
-    <string name="label_scan_qr">اسکن QR</string>
-    <string name="label_start_ble">شروع BLE</string>
-    <string name="label_stop_ble">توقف BLE</string>
-
-    <string name="status_waiting">در انتظار اتصال...</string>
-    <string name="status_connected">اتصال برقرار شد ✅</string>
-    <string name="status_disconnected">اتصال قطع شد ❌</string>
-    <string name="status_sending">در حال ارسال تراکنش...</string>
-    <string name="status_sent">تراکنش ارسال شد 💰</string>
-
-    <string name="error_no_bluetooth">بلوتوث فعال نیست!</string>
-    <string name="error_permission_denied">مجوز دسترسی داده نشده!</string>
-    <string name="error_unknown">خطای ناشناخته رخ داد</string>
+    <string name="scan_qr">اسکن QR</string>
+    <string name="start_ble">شروع BLE</string>
+    <string name="stop_ble">توقف BLE</string>
+    <string name="status_ready">وضعیت: آماده</string>
+    <string name="status_connected">وضعیت: متصل</string>
+    <string name="status_disconnected">وضعیت: قطع</string>
+    <string name="amount_label">مبلغ:</string>
+    <string name="transaction_label">تراکنش آفلاین</string>
 </resources>
