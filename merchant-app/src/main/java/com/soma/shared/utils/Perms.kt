@@ -1,34 +1,50 @@
-package com.soma.shared.utils
+package com.soma.merchant.utils
 
-import android.graphics.Bitmap
-import com.google.zxing.BarcodeFormat
-import com.google.zxing.BinaryBitmap
-import com.google.zxing.MultiFormatReader
-import com.google.zxing.NotFoundException
-import com.google.zxing.common.BitMatrix
-import com.google.zxing.common.HybridBinarizer
-import com.google.zxing.qrcode.QRCodeWriter
-import com.google.zxing.RGBLuminanceSource
+import android.Manifest
+import android.app.Activity
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 
-object QRHandler {
-    fun generate(content: String, size: Int = 600): Bitmap {
-        val matrix: BitMatrix = QRCodeWriter().encode(content, BarcodeFormat.QR_CODE, size, size)
-        val bmp = Bitmap.createBitmap(size, size, Bitmap.Config.RGB_565)
-        for (x in 0 until size) {
-            for (y in 0 until size) {
-                bmp.setPixel(x, y, if (matrix[x, y]) 0xFF000000.toInt() else 0xFFFFFFFF.toInt())
-            }
+object Perms {
+    private const val REQ_BLE = 31
+    private const val REQ_CAMERA = 32
+
+    fun ensureBleScan(activity: Activity): Boolean {
+        val needs = mutableListOf<String>()
+        if (Build.VERSION.SDK_INT >= 31) {
+            if (!granted(activity, Manifest.permission.BLUETOOTH_SCAN)) needs += Manifest.permission.BLUETOOTH_SCAN
+            if (!granted(activity, Manifest.permission.BLUETOOTH_CONNECT)) needs += Manifest.permission.BLUETOOTH_CONNECT
+        } else {
+            if (!granted(activity, Manifest.permission.ACCESS_FINE_LOCATION)) needs += Manifest.permission.ACCESS_FINE_LOCATION
         }
-        return bmp
+        return requestIfNeeded(activity, needs, REQ_BLE)
     }
 
-    fun decodeFromBitmap(bitmap: Bitmap): String? {
-        val w = bitmap.width
-        val h = bitmap.height
-        val pixels = IntArray(w * h)
-        bitmap.getPixels(pixels, 0, w, 0, 0, w, h)
-        val source = RGBLuminanceSource(w, h, pixels)
-        val binBmp = BinaryBitmap(HybridBinarizer(source))
-        return try { MultiFormatReader().decode(binBmp).text } catch (_: NotFoundException) { null }
+    fun ensureBleAdvertise(activity: Activity): Boolean {
+        val needs = mutableListOf<String>()
+        if (Build.VERSION.SDK_INT >= 31) {
+            if (!granted(activity, Manifest.permission.BLUETOOTH_ADVERTISE)) needs += Manifest.permission.BLUETOOTH_ADVERTISE
+            if (!granted(activity, Manifest.permission.BLUETOOTH_CONNECT)) needs += Manifest.permission.BLUETOOTH_CONNECT
+        } else {
+            if (!granted(activity, Manifest.permission.ACCESS_FINE_LOCATION)) needs += Manifest.permission.ACCESS_FINE_LOCATION
+        }
+        return requestIfNeeded(activity, needs, REQ_BLE)
+    }
+
+    fun ensureCamera(activity: Activity): Boolean {
+        val needs = mutableListOf<String>()
+        if (!granted(activity, Manifest.permission.CAMERA)) needs += Manifest.permission.CAMERA
+        return requestIfNeeded(activity, needs, REQ_CAMERA)
+    }
+
+    private fun granted(a: Activity, p: String) =
+        ContextCompat.checkSelfPermission(a, p) == PackageManager.PERMISSION_GRANTED
+
+    private fun requestIfNeeded(a: Activity, needs: List<String>, code: Int): Boolean {
+        if (needs.isEmpty()) return true
+        ActivityCompat.requestPermissions(a, needs.toTypedArray(), code)
+        return false
     }
 }
