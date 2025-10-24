@@ -2,20 +2,26 @@ package com.soma.consumer
 
 import android.os.Bundle
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.qrcode.QRCodeWriter
 import com.soma.consumer.ble.BleClient
-import com.soma.shared.utils.Perms
+import com.soma.consumer.utils.Perms
+import com.soma.consumer.utils.QRHandler
 
 class MainActivity : AppCompatActivity() {
 
+    private val bleClient by lazy { BleClient(this) }
+
     private lateinit var tvAmount: TextView
     private lateinit var tvStatus: TextView
+    private lateinit var ivQR: ImageView
     private lateinit var btnScanQR: Button
     private lateinit var btnStartBLE: Button
     private lateinit var btnStopBLE: Button
 
-    private val ble by lazy { BleClient(this) }
     private var amount = -300000
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -24,45 +30,46 @@ class MainActivity : AppCompatActivity() {
 
         tvAmount = findViewById(R.id.tvAmount)
         tvStatus = findViewById(R.id.tvStatus)
+        ivQR = findViewById(R.id.ivQR)
         btnScanQR = findViewById(R.id.btnScanQR)
         btnStartBLE = findViewById(R.id.btnStartBLE)
-        btnStopBLE = findViewById(R.id.btnStopBLE)
+        btnStopBLE  = findViewById(R.id.btnStopBLE)
 
         tvAmount.text = amount.toString()
-        tvStatus.text = "آماده"
 
-        // فعلاً فقط پیام نمایشی؛ بعداً اسکن واقعی QR را وصل می‌کنیم
+        // اسکن QR (اگر دکمه‌اش در لایه هست)
         btnScanQR.setOnClickListener {
-            tvStatus.text = "اسکن QR به‌زودی اضافه می‌شود"
+            if (Perms.ensureCamera(this)) {
+                // اگر الان فقط نمایش QR لازم داری، مثال ساخت QR:
+                val data = "SOMA|TX|${System.currentTimeMillis()}"
+                QRHandler.renderTo(ivQR, data)
+                tvStatus.text = "QR ساخته شد"
+            }
         }
 
-        btnStartBLE.setOnClickListener {
-            // اجازه‌ها (API 31+ اسکن/کانکت؛ قدیمی‌تر لوکیشن)
-            if (!Perms.ensureBleScan(this)) return@setOnClickListener
-            tvStatus.text = "در حال جستجو برای دستگاه فروشنده…"
-
-            ble.startScan(
-                onFound = { name ->
-                    runOnUiThread { tvStatus.text = "پیدا شد: $name" }
-                },
-                onStop = {
-                    runOnUiThread {
-                        if (tvStatus.text?.startsWith("پیدا شد") != true) {
-                            tvStatus.text = "اسکن تمام شد"
-                        }
-                    }
-                }
-            )
-        }
-
-        btnStopBLE.setOnClickListener {
-            ble.stopScan()
-            tvStatus.text = "BLE متوقف شد"
-        }
+        btnStartBLE.setOnClickListener { startBLE() }
+        btnStopBLE.setOnClickListener { stopBLE() }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        ble.stopScan()
+    private fun startBLE() {
+        if (!Perms.ensureBleScan(this)) {
+            tvStatus.text = "مجوزهای BLE کامل نیست"
+            return
+        }
+        tvStatus.text = "در حال جستجو برای دستگاه فروشنده..."
+
+        bleClient.startScan(
+            onFound = { msg ->
+                runOnUiThread { tvStatus.text = "پیام از فروشنده: $msg" }
+            },
+            onStop = {
+                runOnUiThread { tvStatus.text = "اسکن متوقف شد" }
+            }
+        )
+    }
+
+    private fun stopBLE() {
+        bleClient.stopScan()
+        tvStatus.text = "BLE متوقف شد"
     }
 }
