@@ -6,34 +6,27 @@ import android.bluetooth.BluetoothManager
 import android.bluetooth.le.AdvertiseCallback
 import android.bluetooth.le.AdvertiseData
 import android.bluetooth.le.AdvertiseSettings
-import android.bluetooth.le.BluetoothLeAdvertiser
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.ParcelUuid
 import androidx.core.content.ContextCompat
 
-/**
- * BLE Peripheral advertiser used by the Merchant app.
- * Requires API 21+ (Android 5.0+)
- */
-class BlePeripheralService {
+class BLEPeripheralService {
 
-    private var advertiser: BluetoothLeAdvertiser? = null
+    private var advertiser = (null as BluetoothAdapter?)?.bluetoothLeAdvertiser
     private var advertiseCallback: AdvertiseCallback? = null
 
-    // UUID اختصاصی سرویس BLE
-    private val serviceUuid = ParcelUuid.fromString("0000FEAA-0000-1000-8000-00805F9B34FB")
+    // همان UUID سرویس که Client به‌دنبالش می‌گردد
+    private val serviceUuid = ParcelUuid.fromString("0000FEED-0000-1000-8000-00805F9B34FB")
 
-    /**
-     * بررسی آماده‌بودن Bluetooth برای تبلیغ (Advertise)
-     */
     fun isReady(context: Context): Boolean {
         val mgr = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager?
         val adapter = mgr?.adapter ?: return false
-        if (!adapter.isEnabled || !adapter.isMultipleAdvertisementSupported) return false
+        if (!adapter.isEnabled) return false
+        if (!adapter.isMultipleAdvertisementSupported) return false
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        if (Build.VERSION.SDK_INT >= 31) {
             val hasAdvertise = ContextCompat.checkSelfPermission(
                 context, Manifest.permission.BLUETOOTH_ADVERTISE
             ) == PackageManager.PERMISSION_GRANTED
@@ -42,12 +35,10 @@ class BlePeripheralService {
             ) == PackageManager.PERMISSION_GRANTED
             if (!hasAdvertise || !hasConnect) return false
         }
-        return true
+        advertiser = adapter.bluetoothLeAdvertiser
+        return advertiser != null
     }
 
-    /**
-     * شروع تبلیغ BLE با payload دلخواه
-     */
     fun startAdvertising(
         context: Context,
         payload: ByteArray? = null,
@@ -55,8 +46,8 @@ class BlePeripheralService {
         onFail: ((Int) -> Unit)? = null
     ) {
         val mgr = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager?
-        val adapter = mgr?.adapter ?: return onFail?.invoke(-1)!!
-        advertiser = adapter.bluetoothLeAdvertiser ?: return onFail?.invoke(-2)!!
+        val adapter = mgr?.adapter ?: run { onFail?.invoke(-1); return }
+        advertiser = adapter.bluetoothLeAdvertiser
 
         val settings = AdvertiseSettings.Builder()
             .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY)
@@ -69,7 +60,7 @@ class BlePeripheralService {
             .setIncludeDeviceName(false)
 
         payload?.let {
-            val safe = it.copyOf(minOf(it.size, 20))
+            val safe = it.copyOf(minOf(it.size, 20)) // Service Data حداکثر ~۲۰ بایت
             dataBuilder.addServiceData(serviceUuid, safe)
         }
 
@@ -79,7 +70,6 @@ class BlePeripheralService {
             override fun onStartSuccess(settingsInEffect: AdvertiseSettings) {
                 onStart?.invoke()
             }
-
             override fun onStartFailure(errorCode: Int) {
                 onFail?.invoke(errorCode)
             }
@@ -88,13 +78,8 @@ class BlePeripheralService {
         advertiser?.startAdvertising(settings, data, advertiseCallback)
     }
 
-    /**
-     * توقف تبلیغ BLE
-     */
     fun stopAdvertising() {
-        advertiser?.let { adv ->
-            advertiseCallback?.let { adv.stopAdvertising(it) }
-        }
+        advertiseCallback?.let { cb -> advertiser?.stopAdvertising(cb) }
         advertiseCallback = null
         advertiser = null
     }
