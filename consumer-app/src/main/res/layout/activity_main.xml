@@ -12,36 +12,45 @@
         android:text="0"
         android:textSize="28sp"
         android:layout_gravity="center_horizontal"
-        android:paddingTop="32dp"
-        android:paddingBottom="12dp"/>
+        android:paddingBottom="8dp"
+        android:paddingTop="32dp" />
 
     <TextView
         android:id="@+id/tvStatus"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="آماده"
-        android:textSize="18sp"
+        android:text="..."
         android:layout_gravity="center_horizontal"
-        android:paddingBottom="24dp"/>
+        android:paddingBottom="16dp"
+        android:textSize="18sp" />
 
     <Button
         android:id="@+id/btnScanQR"
         android:layout_width="match_parent"
         android:layout_height="48dp"
-        android:text="اسکن QR" />
+        android:text="اسکن / تولید QR"
+        android:layout_marginTop="8dp" />
 
     <Button
         android:id="@+id/btnStartBLE"
         android:layout_width="match_parent"
         android:layout_height="48dp"
         android:text="شروع BLE"
-        android:layout_marginTop="12dp" />
+        android:layout_marginTop="8dp" />
 
     <Button
         android:id="@+id/btnStopBLE"
         android:layout_width="match_parent"
         android:layout_height="48dp"
         android:text="توقف BLE"
-        android:layout_marginTop="12dp" />
+        android:layout_marginTop="8dp" />
+
+    <ImageView
+        android:id="@+id/ivQR"
+        android:layout_width="220dp"
+        android:layout_height="220dp"
+        android:layout_marginTop="24dp"
+        android:layout_gravity="center_horizontal"
+        android:contentDescription="QR code preview" />
 
 </LinearLayout>
