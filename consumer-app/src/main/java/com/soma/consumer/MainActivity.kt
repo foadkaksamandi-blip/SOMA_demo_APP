@@ -5,13 +5,10 @@ import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import com.soma.consumer.ble.BleClient
 import com.soma.consumer.utils.Perms
 import com.soma.consumer.utils.QRHandler
 
 class MainActivity : AppCompatActivity() {
-
-    private val bleClient by lazy { BleClient(this) }
 
     private lateinit var tvAmount: TextView
     private lateinit var tvStatus: TextView
@@ -20,7 +17,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnStartBLE: Button
     private lateinit var btnStopBLE: Button
 
-    private var amount = -300000
+    private var amount: Long = -300000L
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,37 +31,28 @@ class MainActivity : AppCompatActivity() {
         btnStopBLE = findViewById(R.id.btnStopBLE)
 
         tvAmount.text = amount.toString()
+        tvStatus.text = "آماده"
 
         btnScanQR.setOnClickListener {
-            if (Perms.ensureCamera(this)) {
-                val data = "SOMA|TX|${System.currentTimeMillis()}"
-                QRHandler.renderTo(ivQR, data)
-                tvStatus.text = "QR ساخته شد"
+            // در صورت نیاز به دوربین، فعلاً فقط QR تولید می‌کنیم تا بیلد سبز شود
+            val content = "SOMA|TX|${amount}|${System.currentTimeMillis()}"
+            ivQR.setImageBitmap(QRHandler.generate(content))
+            tvStatus.text = "QR ساخته شد"
+        }
+
+        btnStartBLE.setOnClickListener {
+            val ok = Perms.ensureBleScan(this)
+            if (ok) {
+                tvStatus.text = "در حال جستجو برای دستگاه فروشنده…"
+                // اینجا میتوانی کد BLE واقعی خودت را صدا بزنی
+            } else {
+                tvStatus.text = "برای BLE، مجوز لازم است"
             }
         }
 
-        btnStartBLE.setOnClickListener { startBLE() }
-        btnStopBLE.setOnClickListener { stopBLE() }
-    }
-
-    private fun startBLE() {
-        if (!Perms.ensureBleScan(this)) {
-            tvStatus.text = "مجوزهای BLE کامل نیست"
-            return
+        btnStopBLE.setOnClickListener {
+            tvStatus.text = "BLE متوقف شد"
+            // اینجا stop واقعی BLE را فراخوانی کن
         }
-        tvStatus.text = "در حال جستجو برای دستگاه فروشنده..."
-        bleClient.startScan(
-            onFound = { msg ->
-                runOnUiThread { tvStatus.text = "پیام از فروشنده: $msg" }
-            },
-            onStop = {
-                runOnUiThread { tvStatus.text = "اسکن متوقف شد" }
-            }
-        )
-    }
-
-    private fun stopBLE() {
-        bleClient.stopScan()
-        tvStatus.text = "BLE متوقف شد"
     }
 }
