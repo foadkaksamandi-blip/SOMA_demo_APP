@@ -1,19 +1,19 @@
-<!-- مانیفست اپ فروشنده (Merchant) -->
+<!-- مانیفست اصلاح‌شده (Merchant) -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- بلوتوث و مکان (برای سازگاری با نسخه‌های قدیمی‌تر اندروید) -->
+    <!-- دسترسی‌های BLE -->
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
-    <!-- اندروید 12 به بعد -->
+    <!-- برای Android 12 و بالاتر -->
     <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-permission
         android:name="android.permission.BLUETOOTH_SCAN"
         android:usesPermissionFlags="neverForLocation" />
 
-    <!-- BLE اختیاری (اگر می‌خواهید فقط دستگاه‌های BLE اجازه نصب داشته باشند required را true کنید) -->
+    <!-- BLE feature -->
     <uses-feature
         android:name="android.hardware.bluetooth_le"
         android:required="false" />
@@ -29,11 +29,13 @@
         <activity
             android:name=".MainActivity"
             android:exported="true">
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
 
+        </activity>
     </application>
+
 </manifest>
