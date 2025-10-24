@@ -44,4 +44,11 @@
         android:text="@string/stop_ble"
         android:layout_marginTop="12dp" />
 
+    <Button
+        android:id="@+id/btnGenerateQr"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:text="ساخت QR جدید"
+        android:layout_marginTop="12dp" />
+
 </LinearLayout>
