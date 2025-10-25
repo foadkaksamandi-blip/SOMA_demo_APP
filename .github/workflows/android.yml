@@ -23,29 +23,29 @@ jobs:
           cache: gradle
 
       # Gradle را بدون wrapper روی Runner نصب می‌کند
-      - name: Set up Gradle 8.7 (no wrapper)
+      - name: Set up Gradle 8.9 (no wrapper)
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: "8.7"
+          gradle-version: "8.9"
           cache-disabled: false
 
-      # هرچی wrapper خراب هست پاک و یک wrapper سالم می‌سازیم
-      - name: Regenerate Gradle Wrapper (8.7)
+      # هر بار wrapper خراب را پاک کرده و Gradle سالم می‌سازد
+      - name: Regenerate Gradle Wrapper (8.9)
         run: |
           rm -f gradle/wrapper/gradle-wrapper.jar || true
           rm -f gradle/wrapper/gradle-wrapper.properties || true
           mkdir -p gradle/wrapper
-          gradle wrapper --gradle-version 8.7 --distribution-type bin --no-daemon
+          gradle wrapper --gradle-version 8.9 --distribution-type bin --no-daemon
         shell: bash
 
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
-      # برای اطمینان: اگر Wrapper سالم باشد، این لیست پروژه‌ها را نشان می‌دهد
+      # بررسی پروژه‌ها (تست اولیه Gradle)
       - name: Show projects
         run: ./gradlew projects
 
-      # بیلد کانسومر
+      # بیلد اپ خریدار (Consumer)
       - name: Build Consumer Debug APK
         run: ./gradlew :consumer-app:assembleDebug --stacktrace --no-daemon
 
@@ -56,7 +56,7 @@ jobs:
           path: consumer-app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
 
-      # بیلد مرچنت
+      # بیلد اپ فروشنده (Merchant)
       - name: Build Merchant Debug APK
         run: ./gradlew :merchant-app:assembleDebug --stacktrace --no-daemon
 
