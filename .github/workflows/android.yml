@@ -18,32 +18,27 @@ jobs:
           java-version: "17"
           cache: gradle
 
-      # 1) دانلود Gradle 8.7 (خودِ Gradle، مستقل از wrapper پروژه)
-      - name: Download Gradle 8.7
+      - name: Download Gradle 8.9
         run: |
-          curl -sLo gradle.zip https://services.gradle.org/distributions/gradle-8.7-bin.zip
+          curl -sLo gradle.zip https://services.gradle.org/distributions/gradle-8.9-bin.zip
           unzip -q gradle.zip
-          echo "$PWD/gradle-8.7/bin" >> $GITHUB_PATH
+          echo "$PWD/gradle-8.9/bin" >> $GITHUB_PATH
 
-      # 2) بازتولید فایل‌های wrapper سالم داخل پروژه (jar و properties)
-      - name: Regenerate Gradle Wrapper (8.7)
+      - name: Regenerate Gradle Wrapper (8.9)
         run: |
-          gradle wrapper --gradle-version 8.7 --distribution-type bin --no-daemon
+          gradle wrapper --gradle-version 8.9 --distribution-type bin --no-daemon
 
-      # 3) اطمینان از قابل اجرا بودن اسکریپت gradlew و اصلاح line-ending در صورت نیاز
       - name: Make gradlew executable
         run: |
           sed -i 's/\r$//' gradlew
           chmod +x gradlew
 
-      # اختیاری ولی کمک‌کننده برای دیباگ: لیست پروژه‌ها و تسک‌ها
       - name: Show Gradle projects
         run: ./gradlew projects
 
       - name: Show merchant-app tasks
         run: ./gradlew :merchant-app:tasks --all
 
-      # 4) بیلد APKهای دیباگ
       - name: Build Consumer Debug APK
         run: ./gradlew :consumer-app:assembleDebug --stacktrace --no-daemon
 
