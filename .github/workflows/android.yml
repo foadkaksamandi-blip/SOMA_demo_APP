@@ -5,7 +5,7 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-  workflow_dispatch: {}   # ➜ دکمه Run workflow را فعال می‌کند
+  workflow_dispatch: {}
 
 jobs:
   build:
@@ -23,7 +23,6 @@ jobs:
 
       # اگر gradle-wrapper.jar حذف شده باشد، بساز
       - name: Bootstrap Gradle Wrapper JAR if missing
-        working-directory: SOMA_demo_APP
         run: |
           mkdir -p gradle/wrapper
           if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
@@ -34,29 +33,25 @@ jobs:
           fi
 
       - name: Ensure Gradle wrapper is executable
-        working-directory: SOMA_demo_APP
         run: chmod +x gradlew
 
       - name: Show Gradle version
-        working-directory: SOMA_demo_APP
         run: ./gradlew --version
 
       - name: Build Consumer Debug APK
-        working-directory: SOMA_demo_APP
         run: ./gradlew :consumer-app:assembleDebug --stacktrace
 
       - name: Build Merchant Debug APK
-        working-directory: SOMA_demo_APP
         run: ./gradlew :merchant-app:assembleDebug --stacktrace
 
       - name: Upload Consumer APK
         uses: actions/upload-artifact@v4
         with:
           name: Consumer-Debug-APK
-          path: SOMA_demo_APP/consumer-app/build/outputs/apk/debug/*.apk
+          path: consumer-app/build/outputs/apk/debug/*.apk
 
       - name: Upload Merchant APK
         uses: actions/upload-artifact@v4
         with:
           name: Merchant-Debug-APK
-          path: SOMA_demo_APP/merchant-app/build/outputs/apk/debug/*.apk
+          path: merchant-app/build/outputs/apk/debug/*.apk
