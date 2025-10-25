@@ -7,6 +7,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    # همه دستورات در پوشه‌ی پروژه اجرا شوند
+    defaults:
+      run:
+        working-directory: SOMA_demo_APP
+
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -18,76 +23,50 @@ jobs:
           java-version: 17
           cache: gradle
 
-      # مجوز اجرای Gradle Wrapper
+      # اگر gradle-wrapper.jar نیست، دانلود و در مسیر درست قرار بده
+      - name: Bootstrap Gradle Wrapper JAR if missing
+        run: |
+          mkdir -p gradle/wrapper
+          if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
+            echo "gradle-wrapper.jar not found. Fetching from Gradle 8.9 distribution..."
+            curl -sL https://services.gradle.org/distributions/gradle-8.9-bin.zip -o gradle-8.9-bin.zip
+            unzip -p gradle-8.9-bin.zip gradle-8.9/lib/plugins/gradle-wrapper-8.9.jar > gradle/wrapper/gradle-wrapper.jar
+            rm -f gradle-8.9-bin.zip
+          fi
+
+      - name: Ensure gradle wrapper files exist
+        run: |
+          ls -la
+          ls -la gradle || true
+          ls -la gradle/wrapper || true
+
       - name: Make gradlew executable
         run: chmod +x ./gradlew
-
-      # ------------------ تشخیص ساختار پروژه ------------------
-      - name: Show repo root
-        run: |
-          pwd
-          ls -la
-          echo "----- settings.gradle* -----"
-          (cat settings.gradle.kts || true)
-          (cat settings.gradle || true)
-
-      - name: Show module trees
-        run: |
-          echo "----- consumer-app tree -----"
-          ls -la consumer-app || true
-          echo "----- merchant-app tree -----"
-          ls -la merchant-app || true
-          echo "----- build files existence -----"
-          [ -f merchant-app/build.gradle.kts ] && echo "merchant-app/build.gradle.kts exists"
-          [ -f merchant-app/build.gradle ] && echo "merchant-app/build.gradle exists"
-          [ -f consumer-app/build.gradle.kts ] && echo "consumer-app/build.gradle.kts exists"
-          [ -f consumer-app/build.gradle ] && echo "consumer-app/build.gradle exists"
-
-      - name: Show Gradle wrapper files
-        run: |
-          ls -la gradle/wrapper || true
-          cat gradle/wrapper/gradle-wrapper.properties || true
 
       - name: Show Gradle version (wrapper)
         run: ./gradlew --version
 
-      # ------------------ تشخیص Gradle: لیست پروژه‌ها و تسک‌ها ------------------
       - name: Show projects
-        run: ./gradlew projects --stacktrace --no-daemon
+        run: ./gradlew projects
 
-      - name: Show consumer-app tasks
-        run: ./gradlew :consumer-app:tasks --all --stacktrace --no-daemon
+      # (اختیاری) اطمینان از هم‌خوانی نسخهٔ رپر با 8.9
+      - name: Regenerate wrapper to 8.9 (bin)
+        run: ./gradlew wrapper --gradle-version 8.9 --distribution-type bin --no-daemon
 
-      - name: Show merchant-app tasks
-        run: ./gradlew :merchant-app:tasks --all --stacktrace --no-daemon
-
-      - name: Show merchant-app properties
-        run: ./gradlew :merchant-app:properties --stacktrace --no-daemon
-
-      # ------------------ بیلد هر دو APK ------------------
       - name: Build Consumer Debug APK
         run: ./gradlew :consumer-app:assembleDebug --stacktrace --no-daemon
+
+      - name: Upload Consumer APK(s)
+        uses: actions/upload-artifact@v4
+        with:
+          name: consumer-app-debug-apk
+          path: consumer-app/build/outputs/apk/debug/*.apk
 
       - name: Build Merchant Debug APK
         run: ./gradlew :merchant-app:assembleDebug --stacktrace --no-daemon
 
-      # ------------------ انتشار آرتیفکت‌ها ------------------
-      - name: Upload Consumer APK(s)
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: consumer-app-debug-apk
-          path: |
-            consumer-app/build/outputs/apk/debug/*.apk
-            consumer-app/build/outputs/apk/*/debug/*.apk
-          if-no-files-found: warn
-
       - name: Upload Merchant APK(s)
-        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: merchant-app-debug-apk
-          path: |
-            merchant-app/build/outputs/apk/debug/*.apk
-            merchant-app/build/outputs/apk/*/debug/*.apk
-          if-no-files-found: warn
+          path: merchant-app/build/outputs/apk/debug/*.apk
