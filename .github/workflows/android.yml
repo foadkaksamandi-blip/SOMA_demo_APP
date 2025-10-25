@@ -18,18 +18,34 @@ jobs:
           java-version: "17"
           cache: gradle
 
-      # 👇 این خط مشکل Permission denied را حل می‌کند
-      - name: Make gradlew executable
-        run: chmod +x ./gradlew
+      # 1) دانلود Gradle 8.7 (خودِ Gradle، مستقل از wrapper پروژه)
+      - name: Download Gradle 8.7
+        run: |
+          curl -sLo gradle.zip https://services.gradle.org/distributions/gradle-8.7-bin.zip
+          unzip -q gradle.zip
+          echo "$PWD/gradle-8.7/bin" >> $GITHUB_PATH
 
+      # 2) بازتولید فایل‌های wrapper سالم داخل پروژه (jar و properties)
+      - name: Regenerate Gradle Wrapper (8.7)
+        run: |
+          gradle wrapper --gradle-version 8.7 --distribution-type bin --no-daemon
+
+      # 3) اطمینان از قابل اجرا بودن اسکریپت gradlew و اصلاح line-ending در صورت نیاز
+      - name: Make gradlew executable
+        run: |
+          sed -i 's/\r$//' gradlew
+          chmod +x gradlew
+
+      # اختیاری ولی کمک‌کننده برای دیباگ: لیست پروژه‌ها و تسک‌ها
       - name: Show Gradle projects
         run: ./gradlew projects
 
       - name: Show merchant-app tasks
         run: ./gradlew :merchant-app:tasks --all
 
+      # 4) بیلد APKهای دیباگ
       - name: Build Consumer Debug APK
-        run: ./gradlew :consumer-app:assembleDebug --stacktrace
+        run: ./gradlew :consumer-app:assembleDebug --stacktrace --no-daemon
 
       - name: Upload Consumer APK(s)
         uses: actions/upload-artifact@v4
@@ -39,7 +55,7 @@ jobs:
           if-no-files-found: error
 
       - name: Build Merchant Debug APK
-        run: ./gradlew :merchant-app:assembleDebug --stacktrace
+        run: ./gradlew :merchant-app:assembleDebug --stacktrace --no-daemon
 
       - name: Upload Merchant APK(s)
         uses: actions/upload-artifact@v4
