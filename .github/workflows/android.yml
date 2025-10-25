@@ -1,10 +1,6 @@
 name: Build APKs (SOMA Offline Demo)
 
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
@@ -15,40 +11,25 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # راه‌اندازی جاوا 17
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
 
-      # نصب Gradle بدون نیاز به فایل wrapper داخل ریپو
-      - name: Set up Gradle 8.7 (no wrapper)
-        uses: gradle/actions/setup-gradle@v3
-        with:
-          gradle-version: '8.7'
+      # تشخیصی: لیست پروژه‌ها
+      - name: Show Gradle projects
+        run: ./gradlew projects
 
-      # ساخت wrapper سالم در فضای CI
-      - name: Generate Gradle Wrapper 8.7
-        run: |
-          gradle wrapper --gradle-version 8.7
-          echo "---- gradle/wrapper content ----"
-          ls -la gradle/wrapper
-          echo "---- gradle-wrapper.properties ----"
-          cat gradle/wrapper/gradle-wrapper.properties || true
+      # تشخیصی: لیست تسک‌های merchant-app
+      - name: Show merchant-app tasks
+        run: ./gradlew :merchant-app:tasks --all
 
-      - name: Make gradlew executable
-        run: chmod +x gradlew
+      # بیلد consumer
+      - name: Build Consumer Debug APK
+        run: ./gradlew :consumer-app:assembleDebug --stacktrace
 
-      # بررسی ورژن Gradle جدید
-      - name: Verify Gradle version (via wrapper)
-        run: ./gradlew --version
-
-      # بیلد هر دو اپ (consumer و merchant)
-      - name: Build Consumer & Merchant Debug
-        run: ./gradlew :consumer-app:assembleDebug :merchant-app:assembleDebug --stacktrace
-
-      # آپلود خروجی APK اپ خریدار
       - name: Upload Consumer APK(s)
         uses: actions/upload-artifact@v4
         with:
@@ -56,21 +37,13 @@ jobs:
           path: consumer-app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
 
-      # آپلود خروجی APK اپ فروشنده
+      # بیلد merchant
+      - name: Build Merchant Debug APK
+        run: ./gradlew :merchant-app:assembleDebug --stacktrace
+
       - name: Upload Merchant APK(s)
         uses: actions/upload-artifact@v4
         with:
           name: merchant-app-debug-apk
           path: merchant-app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
-
-      # آپلود wrapper سالم تولیدشده (اختیاری)
-      - name: Upload new wrapper files
-        uses: actions/upload-artifact@v4
-        with:
-          name: generated-gradle-wrapper
-          path: |
-            gradlew
-            gradlew.bat
-            gradle/wrapper/gradle-wrapper.jar
-            gradle/wrapper/gradle-wrapper.properties
