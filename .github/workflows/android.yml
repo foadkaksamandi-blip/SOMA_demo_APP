@@ -2,6 +2,10 @@ name: Build APKs (SOMA Offline Demo)
 
 on:
   workflow_dispatch:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 
 jobs:
   build:
@@ -15,30 +19,19 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "17"
+          java-version: '17'
           cache: gradle
 
-      - name: Download Gradle 8.9
-        run: |
-          curl -sLo gradle.zip https://services.gradle.org/distributions/gradle-8.9-bin.zip
-          unzip -q gradle.zip
-          echo "$PWD/gradle-8.9/bin" >> $GITHUB_PATH
-
-      - name: Regenerate Gradle Wrapper (8.9)
-        run: |
-          gradle wrapper --gradle-version 8.9 --distribution-type bin --no-daemon
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
 
       - name: Make gradlew executable
-        run: |
-          sed -i 's/\r$//' gradlew
-          chmod +x gradlew
+        run: chmod +x ./gradlew
 
-      - name: Show Gradle projects
+      - name: Show projects
         run: ./gradlew projects
 
-      - name: Show merchant-app tasks
-        run: ./gradlew :merchant-app:tasks --all
-
+      # --- Build CONSUMER ---
       - name: Build Consumer Debug APK
         run: ./gradlew :consumer-app:assembleDebug --stacktrace --no-daemon
 
@@ -49,6 +42,7 @@ jobs:
           path: consumer-app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
 
+      # --- Build MERCHANT ---
       - name: Build Merchant Debug APK
         run: ./gradlew :merchant-app:assembleDebug --stacktrace --no-daemon
 
