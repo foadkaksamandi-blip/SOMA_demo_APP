@@ -18,6 +18,10 @@ jobs:
           java-version: 17
           cache: gradle
 
+      # مجوز اجرای Gradle Wrapper
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
       # ------------------ تشخیص ساختار پروژه ------------------
       - name: Show repo root
         run: |
@@ -29,9 +33,9 @@ jobs:
 
       - name: Show module trees
         run: |
-          echo "----- consumer-app tree (top) -----"
+          echo "----- consumer-app tree -----"
           ls -la consumer-app || true
-          echo "----- merchant-app tree (top) -----"
+          echo "----- merchant-app tree -----"
           ls -la merchant-app || true
           echo "----- build files existence -----"
           [ -f merchant-app/build.gradle.kts ] && echo "merchant-app/build.gradle.kts exists"
@@ -39,20 +43,15 @@ jobs:
           [ -f consumer-app/build.gradle.kts ] && echo "consumer-app/build.gradle.kts exists"
           [ -f consumer-app/build.gradle ] && echo "consumer-app/build.gradle exists"
 
-      # ------------------ Gradle wrapper و نسخه ------------------
       - name: Show Gradle wrapper files
         run: |
           ls -la gradle/wrapper || true
           cat gradle/wrapper/gradle-wrapper.properties || true
 
-      # اگر لازم شد نسخهٔ رپر را آپگرید کن (فقط نمایش؛ بیلد از همینی استفاده می‌کند)
       - name: Show Gradle version (wrapper)
         run: ./gradlew --version
 
-      - name: Make gradlew executable
-        run: chmod +x ./gradlew
-
-      # ------------------ تشخیص Gradle: لیست پروژه‌ها/تسک‌ها ------------------
+      # ------------------ تشخیص Gradle: لیست پروژه‌ها و تسک‌ها ------------------
       - name: Show projects
         run: ./gradlew projects --stacktrace --no-daemon
 
