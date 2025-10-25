@@ -23,15 +23,15 @@ jobs:
           java-version: '17'
 
       # نصب Gradle بدون نیاز به فایل wrapper داخل ریپو
-      - name: Set up Gradle 8.5 (no wrapper)
+      - name: Set up Gradle 8.7 (no wrapper)
         uses: gradle/actions/setup-gradle@v3
         with:
-          gradle-version: '8.5'
+          gradle-version: '8.7'
 
       # ساخت wrapper سالم در فضای CI
-      - name: Generate Gradle Wrapper 8.5
+      - name: Generate Gradle Wrapper 8.7
         run: |
-          gradle wrapper --gradle-version 8.5
+          gradle wrapper --gradle-version 8.7
           echo "---- gradle/wrapper content ----"
           ls -la gradle/wrapper
           echo "---- gradle-wrapper.properties ----"
