@@ -21,15 +21,15 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      # اگر gradle-wrapper.jar حذف شده باشد، بساز
+      # دانلود مستقیم gradle-wrapper.jar اگر نبود
       - name: Bootstrap Gradle Wrapper JAR if missing
         run: |
           mkdir -p gradle/wrapper
           if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
-            echo "gradle-wrapper.jar not found. Fetching from Gradle..."
-            curl -sL https://services.gradle.org/distributions/gradle-8.9-bin.zip -o gradle-8.9-bin.zip
-            unzip -p gradle-8.9-bin.zip gradle-8.9/lib/plugins/gradle-wrapper-8.9.jar > gradle/wrapper/gradle-wrapper.jar
-            rm -f gradle-8.9-bin.zip
+            echo "gradle-wrapper.jar not found. Downloading from Gradle repo..."
+            curl -sSL -o gradle/wrapper/gradle-wrapper.jar \
+              https://repo.gradle.org/gradle/libs-releases-local/org/gradle/gradle-wrapper/8.9/gradle-wrapper-8.9.jar
+            ls -l gradle/wrapper
           fi
 
       - name: Ensure Gradle wrapper is executable
