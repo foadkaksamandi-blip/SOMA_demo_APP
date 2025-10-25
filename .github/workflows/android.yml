@@ -18,15 +18,16 @@ jobs:
           java-version: "17"
           cache: gradle
 
-      # تشخیصی: لیست پروژه‌ها
+      # 👇 این خط مشکل Permission denied را حل می‌کند
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
       - name: Show Gradle projects
         run: ./gradlew projects
 
-      # تشخیصی: لیست تسک‌های merchant-app
       - name: Show merchant-app tasks
         run: ./gradlew :merchant-app:tasks --all
 
-      # بیلد consumer
       - name: Build Consumer Debug APK
         run: ./gradlew :consumer-app:assembleDebug --stacktrace
 
@@ -37,7 +38,6 @@ jobs:
           path: consumer-app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
 
-      # بیلد merchant
       - name: Build Merchant Debug APK
         run: ./gradlew :merchant-app:assembleDebug --stacktrace
 
