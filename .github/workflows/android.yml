@@ -21,12 +21,32 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      # ✅ ساخت Gradle Wrapper رسمی در صورت نبود
-      - name: Generate Gradle Wrapper if missing
+      # ✅ بوت‌استرپ مطمئن Gradle Wrapper بدون نیاز به gradle سیستم
+      - name: Bootstrap Gradle Wrapper JAR if missing
+        shell: bash
         run: |
-          if [ ! -f gradlew ]; then
-            echo "Gradle wrapper not found — generating a new one..."
-            gradle wrapper --gradle-version 8.9
+          set -euo pipefail
+          mkdir -p gradle/wrapper
+          if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
+            echo "gradle-wrapper.jar not found. Fetching official Gradle 8.9 jar..."
+            curl -sSL -o gradle-8.9-bin.zip https://services.gradle.org/distributions/gradle-8.9-bin.zip
+            # فقط فایل jar را از داخل زیپ استخراج می‌کنیم:
+            unzip -p gradle-8.9-bin.zip gradle-8.9/lib/plugins/gradle-wrapper-8.9.jar > gradle/wrapper/gradle-wrapper.jar
+            rm -f gradle-8.9-bin.zip
+            echo "Wrapper JAR installed at gradle/wrapper/gradle-wrapper.jar"
+          fi
+
+          # اگر properties وجود ندارد، می‌سازیم
+          if [ ! -f gradle/wrapper/gradle-wrapper.properties ]; then
+            cat > gradle/wrapper/gradle-wrapper.properties <<'EOF'
+distributionBase=GRADLE_USER_HOME
+distributionPath=wrapper/dists
+distributionUrl=https\://services.gradle.org/distributions/gradle-8.9-bin.zip
+networkTimeout=10000
+zipStoreBase=GRADLE_USER_HOME
+zipStorePath=wrapper/dists
+EOF
+            echo "Created gradle/wrapper/gradle-wrapper.properties"
           fi
 
       - name: Ensure Gradle wrapper is executable
